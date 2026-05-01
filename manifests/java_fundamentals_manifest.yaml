@@ -1,0 +1,1133 @@
+book:
+  book_id: java_fundamentals
+  title:
+    tr: Java'nın Temelleri
+    en: Java Fundamentals
+    de: Grundlagen von Java
+  subtitle:
+    tr: Bilgisayar Mühendisliği Öğrencileri İçin Temel Programlama, Konsol ve GUI Uygulamaları
+    en: Fundamental Programming, Console and GUI Applications for Computer Engineering Students
+    de: Grundlegende Programmierung, Konsolen- und GUI-Anwendungen für Informatikstudierende
+  author: İsmail Kırbaş
+  year: '2026'
+  version: 1.0-v2.4.1-manifest
+  book_type: applied_textbook
+  domain: programming
+  primary_technology: Java
+  target_output_formats:
+  - markdown
+  - docx
+  - pdf
+language:
+  primary_language: tr
+  output_languages:
+  - tr
+  - en
+  - de
+  generation_mode: parallel
+  file_naming_language: en
+  manifest_language: en
+  automation_language: en
+  content_language_policy:
+    headings: target_language
+    body_text: target_language
+    exercises: target_language
+    glossary: target_language_with_english_terms
+    code_comments: target_language
+    code_identifiers: en
+    console_outputs: target_language
+  terminology:
+    use_controlled_glossary: true
+    glossary_file: terminology_glossary.yaml
+    first_use_policy: target_term_with_english_in_parentheses
+  fallback:
+    fallback_language: tr
+    missing_translation_policy: report_missing_do_not_invent
+audience:
+  primary:
+    tr:
+    - Bilgisayar mühendisliği lisans öğrencileri
+    - Yazılım mühendisliği lisans öğrencileri
+    en:
+    - Undergraduate computer engineering students
+    - Undergraduate software engineering students
+    de:
+    - Informatikstudierende im Grundstudium
+    - Studierende der Softwaretechnik
+  assumed_background:
+    tr:
+    - Temel bilgisayar okuryazarlığı
+    - Dosya ve klasör mantığı
+    en:
+    - Basic computer literacy
+    - Basic understanding of files and folders
+    de:
+    - Grundlegende Computerkenntnisse
+    - Grundverständnis von Dateien und Ordnern
+  not_assumed:
+    tr:
+    - Önceden Java bilgisi
+    - Nesneye yönelik programlama ayrıntıları
+    en:
+    - Prior Java knowledge
+    - Detailed object-oriented programming knowledge
+    de:
+    - Vorkenntnisse in Java
+    - Detaillierte Kenntnisse der objektorientierten Programmierung
+pedagogy:
+  approach:
+  - simplicity
+  - practice_oriented
+  - concrete_to_abstract
+  - error_based_learning
+  - lab_friendly
+  default_chapter_flow:
+  - chapter_roadmap
+  - pedagogical_role
+  - learning_outcomes
+  - prerequisites
+  - core_concepts
+  - step_by_step_examples
+  - working_logic
+  - mini_application
+  - common_mistakes
+  - debugging_task
+  - summary
+  - glossary
+  - self_assessment
+  - programming_exercises
+  - lab_task
+  - rubric
+  - further_reading
+  - bridge_to_next_chapter
+technical_profile:
+  code_language: java
+  code_block_language_tag: java
+  file_extension: .java
+  identifier_language: en
+  main_file_rule: public class name must match the file name
+  package_policy: No package declaration in beginner chapters unless explicitly required
+  runtime:
+    name: JDK
+    min_version: '17'
+    preferred_version: '21'
+  code_execution_policy:
+    compile_check: true
+    run_check: optional
+    broken_examples_marked: true
+content_scope:
+  include:
+  - Java SE
+  - JVM, JRE, JDK
+  - console applications
+  - variables
+  - operators
+  - decision structures
+  - loops
+  - methods
+  - arrays
+  - collections
+  - Swing GUI
+  - basic JDBC
+  exclude:
+  - Spring Boot
+  - Hibernate
+  - advanced design patterns
+  - enterprise microservice architecture
+  - advanced concurrency
+sources:
+  priority_policy:
+  - official_documentation
+  - official_learning_resources
+  - language_specification
+  - trusted_textbooks
+  - academic_pedagogy_sources
+  required_sources:
+  - title: Java SE Documentation
+    type: official_documentation
+    language: en
+    usage: API and platform behavior verification
+  - title: Dev.java
+    type: official_learning_resource
+    language: en
+    usage: Modern Java learning guidance
+  - title: Java Language Specification
+    type: language_specification
+    language: en
+    usage: Syntax and language rules
+capabilities:
+  code_examples: true
+  runnable_projects: true
+  mermaid_diagrams: true
+  screenshots: false
+  qr_codes: true
+  github_export: true
+  docx_build: true
+  multilingual_output: true
+assessment:
+  include_multiple_choice: true
+  include_true_false: true
+  include_open_ended: true
+  include_debugging_tasks: true
+  include_lab_rubric: true
+  question_language: target_language
+  difficulty_distribution:
+    easy: 30
+    medium: 50
+    hard: 20
+automation:
+  numbering_policy: build_time
+  chapter_id_policy: stable_slug
+  heading_numbering: false
+  figure_numbering: build_time
+  table_numbering: build_time
+  code_numbering: build_time
+  github_policy: chapter_id_based_paths
+  github_code_path_template: code/{chapter_id}/code{code_index}/{file}
+  qr_policy: manifest_based
+  manual_asset_override: true
+  output_root: generated/java_fundamentals
+assets:
+  mermaid:
+    enabled: true
+    meta_required: true
+    output_format: png
+    default_width_cm: 12.5
+  screenshots:
+    enabled: false
+    meta_required: true
+  manual_override:
+    enabled: true
+    manual_dir: assets/manual
+    auto_dir: assets/auto
+    locked_dir: assets/locked
+    final_dir: assets/final
+  localization_policy: language_specific_when_textual
+approval_gates:
+  manifest_validation:
+    required: true
+    actor: human_or_llm
+    stop_on_failure: true
+  prompt_package_generation:
+    required: false
+    actor: llm
+  chapter_input_generation:
+    required: false
+    actor: llm
+  outline_generation:
+    required: true
+    actor: llm
+  outline_review:
+    required: true
+    actor: human_or_llm
+    allowed_decisions:
+    - PASS
+    - REVISION_REQUIRED
+    - BLOCKED
+    stop_on_blocked: true
+  full_text_generation:
+    required: true
+    actor: human
+    requires_previous_gate: outline_review:PASS
+  final_build:
+    required: false
+    actor: human
+audit:
+  save_generation_log: true
+  save_prompt_snapshots: true
+  save_manifest_hash: true
+  save_model_notes: true
+rights:
+  source_use_policy: summarize_transform_and_attribute
+  code_license: MIT
+  book_license: all_rights_reserved
+  image_policy: generated_user_provided_or_licensed
+  attribution_required: true
+chapters:
+- chapter_id: java_introduction
+  chapter_number: 1
+  title:
+    tr: Java’ya Giriş ve Programlama Mantığı
+    en: Introduction to Java and Programming Logic
+  part:
+    tr: Kısım I — Java'ya Giriş ve Geliştirme Ortamı
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Java kullanım alanları, JVM-JRE-JDK ayrımı ve programlama sürecini tanıtmak.
+    en: Java kullanım alanları, JVM-JRE-JDK ayrımı ve programlama sürecini tanıtmak.
+  mandatory_concepts:
+  - key: java
+  - key: jvm
+  - key: jre
+  - key: jdk
+  - key: bytecode
+  mini_application:
+    tr: Java bilgi kartı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_01_java_introduction.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: development_environment
+  chapter_number: 2
+  title:
+    tr: Java Geliştirme Ortamı ve İlk Proje
+    en: Java Development Environment and First Project
+  part:
+    tr: Kısım I — Java'ya Giriş ve Geliştirme Ortamı
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: JDK kurulumu, IDE, terminal, derleme ve çalıştırma mantığını öğretmek.
+    en: JDK kurulumu, IDE, terminal, derleme ve çalıştırma mantığını öğretmek.
+  mandatory_concepts:
+  - key: jdk
+  - key: ide
+  - key: terminal
+  - key: javac
+  - key: java_command
+  - key: path
+  mini_application:
+    tr: IDE ve terminal ile aynı programı çalıştırma
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_02_development_environment.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: basic_program_structure
+  chapter_number: 3
+  title:
+    tr: Java Programının Temel Yapısı
+    en: Basic Structure of a Java Program
+  part:
+    tr: Kısım I — Java'ya Giriş ve Geliştirme Ortamı
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: class, main, blok, yorum satırı ve çıktı komutlarını açıklamak.
+    en: class, main, blok, yorum satırı ve çıktı komutlarını açıklamak.
+  mandatory_concepts:
+  - key: class
+  - key: main_method
+  - key: block
+  - key: comment
+  - key: println
+  mini_application:
+    tr: Öğrenci tanıtım kartı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_03_basic_program_structure.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: variables_data_types_constants
+  chapter_number: 4
+  title:
+    tr: Değişkenler, Veri Tipleri ve Sabitler
+    en: Variables, Data Types and Constants
+  part:
+    tr: Kısım II — Temel Sözdizimi ve Veriyle Çalışma
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Veriyi bellekte temsil etme mantığını öğretmek.
+    en: Veriyi bellekte temsil etme mantığını öğretmek.
+  mandatory_concepts:
+  - key: variable
+  - key: primitive_types
+  - key: string
+  - key: constant
+  - key: final
+  mini_application:
+    tr: Öğrenci not değişkenleri
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_04_variables_data_types_constants.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: type_conversions_numeric_operations
+  chapter_number: 5
+  title:
+    tr: Tip Dönüşümleri ve Sayısal İşlemler
+    en: Type Conversions and Numeric Operations
+  part:
+    tr: Kısım II — Temel Sözdizimi ve Veriyle Çalışma
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Veri tipleri arasında güvenli dönüşüm yapmayı öğretmek.
+    en: Veri tipleri arasında güvenli dönüşüm yapmayı öğretmek.
+  mandatory_concepts:
+  - key: casting
+  - key: type_conversion
+  - key: numeric_operation
+  - key: overflow
+  - key: precision
+  mini_application:
+    tr: Birim dönüşüm aracı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_05_type_conversions_numeric_operations.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: operators_expressions
+  chapter_number: 6
+  title:
+    tr: Operatörler ve İfadeler
+    en: Operators and Expressions
+  part:
+    tr: Kısım II — Temel Sözdizimi ve Veriyle Çalışma
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Hesaplama, karşılaştırma ve mantıksal ifade kurmayı öğretmek.
+    en: Hesaplama, karşılaştırma ve mantıksal ifade kurmayı öğretmek.
+  mandatory_concepts:
+  - key: arithmetic_operator
+  - key: assignment_operator
+  - key: relational_operator
+  - key: logical_operator
+  - key: precedence
+  mini_application:
+    tr: KDV/indirim/ortalama hesaplayıcı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_06_operators_expressions.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: console_input_scanner
+  chapter_number: 7
+  title:
+    tr: Konsol Girişi ve Scanner Kullanımı
+    en: Console Input and Scanner Usage
+  part:
+    tr: Kısım II — Temel Sözdizimi ve Veriyle Çalışma
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Etkileşimli program yazmayı öğretmek.
+    en: Etkileşimli program yazmayı öğretmek.
+  mandatory_concepts:
+  - key: scanner
+  - key: next_line
+  - key: next_int
+  - key: input_validation
+  - key: console_input
+  mini_application:
+    tr: Kullanıcıdan bilgi alan kayıt programı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_07_console_input_scanner.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: decision_structures
+  chapter_number: 8
+  title:
+    tr: 'Karar Yapıları: if, else-if ve switch'
+    en: 'Decision Structures: if, else-if and switch'
+  part:
+    tr: Kısım III — Karar Yapıları, Döngüler ve Algoritmik Düşünme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Koşullu akış kurmayı öğretmek.
+    en: Koşullu akış kurmayı öğretmek.
+  mandatory_concepts:
+  - key: if_statement
+  - key: else_statement
+  - key: else_if
+  - key: switch_statement
+  - key: case
+  - key: default
+  - key: break
+  mini_application:
+    tr: Harf notu hesaplama
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_08_decision_structures.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: while_do_while_loops
+  chapter_number: 9
+  title:
+    tr: while ve do-while Döngüleri
+    en: while and do-while Loops
+  part:
+    tr: Kısım III — Karar Yapıları, Döngüler ve Algoritmik Düşünme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Koşula bağlı tekrar mantığını öğretmek.
+    en: Koşula bağlı tekrar mantığını öğretmek.
+  mandatory_concepts:
+  - key: while_loop
+  - key: do_while_loop
+  - key: condition
+  - key: sentinel
+  - key: infinite_loop
+  mini_application:
+    tr: Şifre deneme sistemi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_09_while_do_while_loops.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: for_loops_patterns
+  chapter_number: 10
+  title:
+    tr: for Döngüsü ve Döngü Kalıpları
+    en: for Loops and Loop Patterns
+  part:
+    tr: Kısım III — Karar Yapıları, Döngüler ve Algoritmik Düşünme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Sayaçlı tekrar ve toplam alma desenlerini öğretmek.
+    en: Sayaçlı tekrar ve toplam alma desenlerini öğretmek.
+  mandatory_concepts:
+  - key: for_loop
+  - key: counter
+  - key: accumulator
+  - key: nested_loop
+  - key: loop_pattern
+  mini_application:
+    tr: Çarpım tablosu ve sayı analizi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_10_for_loops_patterns.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: algorithmic_problem_solving_patterns
+  chapter_number: 11
+  title:
+    tr: Algoritmik Problem Çözme Desenleri
+    en: Algorithmic Problem-Solving Patterns
+  part:
+    tr: Kısım III — Karar Yapıları, Döngüler ve Algoritmik Düşünme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Programlama problemlerini sistematik çözmeyi öğretmek.
+    en: Programlama problemlerini sistematik çözmeyi öğretmek.
+  mandatory_concepts:
+  - key: problem_decomposition
+  - key: trace_table
+  - key: factorial
+  - key: prime_number
+  - key: fibonacci
+  mini_application:
+    tr: Asal sayı, faktöriyel, Fibonacci
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_11_algorithmic_problem_solving_patterns.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: methods_decomposition_reuse
+  chapter_number: 12
+  title:
+    tr: 'Metotlar: Parçalama ve Yeniden Kullanım'
+    en: 'Methods: Decomposition and Reuse'
+  part:
+    tr: Kısım IV — Metotlar, Diziler ve Metin İşleme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Kod tekrarını azaltmayı öğretmek.
+    en: Kod tekrarını azaltmayı öğretmek.
+  mandatory_concepts:
+  - key: method
+  - key: parameter
+  - key: return_value
+  - key: void
+  - key: reuse
+  mini_application:
+    tr: Hesaplama metotları kütüphanesi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_12_methods_decomposition_reuse.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: method_overloading_recursion
+  chapter_number: 13
+  title:
+    tr: Metot Overloading ve Özyineleme
+    en: Method Overloading and Recursion
+  part:
+    tr: Kısım IV — Metotlar, Diziler ve Metin İşleme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Metot esnekliği ve temel recursion mantığını öğretmek.
+    en: Metot esnekliği ve temel recursion mantığını öğretmek.
+  mandatory_concepts:
+  - key: overloading
+  - key: recursion
+  - key: base_case
+  - key: recursive_call
+  - key: method_signature
+  mini_application:
+    tr: Alan/çevre ve faktöriyel uygulamaları
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_13_method_overloading_recursion.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: one_dimensional_arrays
+  chapter_number: 14
+  title:
+    tr: Tek Boyutlu Diziler
+    en: One-Dimensional Arrays
+  part:
+    tr: Kısım IV — Metotlar, Diziler ve Metin İşleme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Çoklu veriyi aynı yapıda tutmayı öğretmek.
+    en: Çoklu veriyi aynı yapıda tutmayı öğretmek.
+  mandatory_concepts:
+  - key: array
+  - key: index
+  - key: length
+  - key: iteration
+  - key: bounds
+  mini_application:
+    tr: Not listesi analizi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_14_one_dimensional_arrays.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: multidimensional_arrays
+  chapter_number: 15
+  title:
+    tr: Çok Boyutlu Diziler
+    en: Multidimensional Arrays
+  part:
+    tr: Kısım IV — Metotlar, Diziler ve Metin İşleme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Tablo/matris verisiyle çalışmayı öğretmek.
+    en: Tablo/matris verisiyle çalışmayı öğretmek.
+  mandatory_concepts:
+  - key: two_dimensional_array
+  - key: row
+  - key: column
+  - key: matrix
+  - key: nested_loop
+  mini_application:
+    tr: Ders-not çizelgesi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_15_multidimensional_arrays.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: string_processing_text_problems
+  chapter_number: 16
+  title:
+    tr: String İşlemleri ve Metin Problemleri
+    en: String Processing and Text Problems
+  part:
+    tr: Kısım IV — Metotlar, Diziler ve Metin İşleme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Metin verisi üzerinde işlem yapmayı öğretmek.
+    en: Metin verisi üzerinde işlem yapmayı öğretmek.
+  mandatory_concepts:
+  - key: string
+  - key: equals
+  - key: substring
+  - key: char_at
+  - key: index_of
+  - key: text_processing
+  mini_application:
+    tr: Kullanıcı adı/parola ve metin analiz aracı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_16_string_processing_text_problems.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: math_random_datetime
+  chapter_number: 17
+  title:
+    tr: Math, Random ve Date-Time Kullanımı
+    en: Using Math, Random and Date-Time
+  part:
+    tr: Kısım V — Standart Kütüphane, Koleksiyonlar ve Dosya İşlemleri
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Standart kütüphane kullanımını öğretmek.
+    en: Standart kütüphane kullanımını öğretmek.
+  mandatory_concepts:
+  - key: math
+  - key: random
+  - key: local_date
+  - key: local_time
+  - key: date_time_api
+  mini_application:
+    tr: Zar oyunu ve yaş hesaplama
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_17_math_random_datetime.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: packages_import_project_structure
+  chapter_number: 18
+  title:
+    tr: Paketler, import ve Proje Düzeni
+    en: Packages, import and Project Structure
+  part:
+    tr: Kısım V — Standart Kütüphane, Koleksiyonlar ve Dosya İşlemleri
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Kodları düzenli projeye dönüştürmek.
+    en: Kodları düzenli projeye dönüştürmek.
+  mandatory_concepts:
+  - key: package
+  - key: import
+  - key: project_structure
+  - key: classpath
+  - key: helper_class
+  mini_application:
+    tr: Yardımcı sınıflarla proje düzeni
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_18_packages_import_project_structure.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: arraylist_dynamic_lists
+  chapter_number: 19
+  title:
+    tr: ArrayList ile Dinamik Liste Yönetimi
+    en: Dynamic List Management with ArrayList
+  part:
+    tr: Kısım V — Standart Kütüphane, Koleksiyonlar ve Dosya İşlemleri
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Sabit dizi yerine dinamik liste kullanmayı öğretmek.
+    en: Sabit dizi yerine dinamik liste kullanmayı öğretmek.
+  mandatory_concepts:
+  - key: arraylist
+  - key: add
+  - key: remove
+  - key: get
+  - key: size
+  - key: iteration
+  mini_application:
+    tr: Öğrenci listesi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_19_arraylist_dynamic_lists.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: hashmap_hashset_collection_choice
+  chapter_number: 20
+  title:
+    tr: HashMap, HashSet ve Koleksiyon Seçimi
+    en: HashMap, HashSet and Collection Selection
+  part:
+    tr: Kısım V — Standart Kütüphane, Koleksiyonlar ve Dosya İşlemleri
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Anahtar-değer ve benzersizlik mantığını öğretmek.
+    en: Anahtar-değer ve benzersizlik mantığını öğretmek.
+  mandatory_concepts:
+  - key: hashmap
+  - key: hashset
+  - key: key_value
+  - key: uniqueness
+  - key: collection_choice
+  mini_application:
+    tr: Telefon rehberi / stok listesi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_20_hashmap_hashset_collection_choice.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: exception_handling
+  chapter_number: 21
+  title:
+    tr: Hata Yönetimi
+    en: Exception Handling
+  part:
+    tr: Kısım V — Standart Kütüphane, Koleksiyonlar ve Dosya İşlemleri
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Dayanıklı program yazmayı öğretmek.
+    en: Dayanıklı program yazmayı öğretmek.
+  mandatory_concepts:
+  - key: exception
+  - key: try_catch
+  - key: finally
+  - key: throw
+  - key: input_error
+  mini_application:
+    tr: Hatalı girişlere dayanıklı hesap makinesi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_21_exception_handling.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: file_operations
+  chapter_number: 22
+  title:
+    tr: Dosya İşlemleri
+    en: File Operations
+  part:
+    tr: Kısım V — Standart Kütüphane, Koleksiyonlar ve Dosya İşlemleri
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Veriyi kalıcı saklamayı öğretmek.
+    en: Veriyi kalıcı saklamayı öğretmek.
+  mandatory_concepts:
+  - key: file
+  - key: path
+  - key: reader
+  - key: writer
+  - key: buffered_reader
+  - key: buffered_writer
+  mini_application:
+    tr: Dosyaya öğrenci kaydı yazma-okuma
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_22_file_operations.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: classes_objects_applied_intro
+  chapter_number: 23
+  title:
+    tr: Sınıf ve Nesne Kavramına Uygulama Odaklı Giriş
+    en: Applied Introduction to Classes and Objects
+  part:
+    tr: Kısım VI — Uygulama Geliştirmeye Yetecek Kadar Nesne Kullanımı
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Veriyi bir model sınıfında toplamayı öğretmek.
+    en: Veriyi bir model sınıfında toplamayı öğretmek.
+  mandatory_concepts:
+  - key: class
+  - key: object
+  - key: field
+  - key: method
+  - key: new_operator
+  mini_application:
+    tr: Ogrenci sınıfı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_23_classes_objects_applied_intro.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: constructor_this_encapsulation
+  chapter_number: 24
+  title:
+    tr: Constructor, this ve Basit Kapsülleme
+    en: Constructor, this and Basic Encapsulation
+  part:
+    tr: Kısım VI — Uygulama Geliştirmeye Yetecek Kadar Nesne Kullanımı
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Nesne oluşturmayı düzenli hâle getirmeyi öğretmek.
+    en: Nesne oluşturmayı düzenli hâle getirmeyi öğretmek.
+  mandatory_concepts:
+  - key: constructor
+  - key: this
+  - key: private
+  - key: getter
+  - key: setter
+  - key: encapsulation
+  mini_application:
+    tr: Öğrenci kayıt modeli
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_24_constructor_this_encapsulation.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: inheritance_interface_preview
+  chapter_number: 25
+  title:
+    tr: Kalıtım ve Interface’e Kısa Ön Bakış
+    en: Short Preview of Inheritance and Interface
+  part:
+    tr: Kısım VI — Uygulama Geliştirmeye Yetecek Kadar Nesne Kullanımı
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: GUI olay yönetimine hazırlık sağlamak.
+    en: GUI olay yönetimine hazırlık sağlamak.
+  mandatory_concepts:
+  - key: inheritance
+  - key: extends
+  - key: interface
+  - key: implements
+  - key: action_listener
+  mini_application:
+    tr: ActionListener mantığına hazırlık
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_25_inheritance_interface_preview.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: gui_swing_architecture
+  chapter_number: 26
+  title:
+    tr: GUI Programlamaya Giriş ve Swing Mimarisi
+    en: Introduction to GUI Programming and Swing Architecture
+  part:
+    tr: Kısım VII — Java ile GUI Uygulama Geliştirme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Pencere tabanlı uygulama mantığını öğretmek.
+    en: Pencere tabanlı uygulama mantığını öğretmek.
+  mandatory_concepts:
+  - key: gui
+  - key: swing
+  - key: jframe
+  - key: event_dispatch_thread
+  - key: component
+  mini_application:
+    tr: İlk JFrame
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_26_gui_swing_architecture.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: layout_management_ui_design
+  chapter_number: 27
+  title:
+    tr: Layout Yönetimi ve Arayüz Tasarımı
+    en: Layout Management and UI Design
+  part:
+    tr: Kısım VII — Java ile GUI Uygulama Geliştirme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Bileşenleri düzenli yerleştirmeyi öğretmek.
+    en: Bileşenleri düzenli yerleştirmeyi öğretmek.
+  mandatory_concepts:
+  - key: layout_manager
+  - key: border_layout
+  - key: grid_layout
+  - key: flow_layout
+  - key: panel
+  mini_application:
+    tr: Form ekranı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_27_layout_management_ui_design.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: basic_swing_components
+  chapter_number: 28
+  title:
+    tr: Temel Swing Bileşenleri
+    en: Basic Swing Components
+  part:
+    tr: Kısım VII — Java ile GUI Uygulama Geliştirme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Form elemanlarını kullanmayı öğretmek.
+    en: Form elemanlarını kullanmayı öğretmek.
+  mandatory_concepts:
+  - key: jlabel
+  - key: jtextfield
+  - key: jbutton
+  - key: jcombobox
+  - key: jcheckbox
+  mini_application:
+    tr: Öğrenci kayıt formu
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_28_basic_swing_components.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: event_handling_form_validation
+  chapter_number: 29
+  title:
+    tr: Olay Yönetimi ve Form Doğrulama
+    en: Event Handling and Form Validation
+  part:
+    tr: Kısım VII — Java ile GUI Uygulama Geliştirme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Buton olaylarını ve doğrulamayı öğretmek.
+    en: Buton olaylarını ve doğrulamayı öğretmek.
+  mandatory_concepts:
+  - key: event
+  - key: action_event
+  - key: action_listener
+  - key: validation
+  - key: message_dialog
+  mini_application:
+    tr: Hesaplama formu
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_29_event_handling_form_validation.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: lists_tables_menus_dialogs
+  chapter_number: 30
+  title:
+    tr: Liste, Tablo, Menü ve Diyaloglar
+    en: Lists, Tables, Menus and Dialogs
+  part:
+    tr: Kısım VII — Java ile GUI Uygulama Geliştirme
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Daha gerçekçi GUI ekranları geliştirmeyi öğretmek.
+    en: Daha gerçekçi GUI ekranları geliştirmeyi öğretmek.
+  mandatory_concepts:
+  - key: jlist
+  - key: jtable
+  - key: jmenu
+  - key: jdialog
+  - key: table_model
+  mini_application:
+    tr: Öğrenci listeleme ekranı
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_30_lists_tables_menus_dialogs.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: jdbc_database_intro
+  chapter_number: 31
+  title:
+    tr: JDBC ile Veritabanı Programlamaya Giriş
+    en: Introduction to Database Programming with JDBC
+  part:
+    tr: Kısım VIII — Veritabanı, Bütünleşik Uygulama ve Final Projesi
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Java-veritabanı bağlantısını öğretmek.
+    en: Java-veritabanı bağlantısını öğretmek.
+  mandatory_concepts:
+  - key: jdbc
+  - key: connection
+  - key: prepared_statement
+  - key: result_set
+  - key: crud
+  mini_application:
+    tr: Kayıt ekleme-listeleme
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_31_jdbc_database_intro.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: integrated_gui_file_database_app
+  chapter_number: 32
+  title:
+    tr: GUI + Dosya/Veritabanı Bütünleşik Uygulama
+    en: Integrated GUI + File/Database Application
+  part:
+    tr: Kısım VIII — Veritabanı, Bütünleşik Uygulama ve Final Projesi
+    en: Book Part
+  chapter_type: core_topic
+  purpose:
+    tr: Tüm temel konuları birleştirmeyi öğretmek.
+    en: Tüm temel konuları birleştirmeyi öğretmek.
+  mandatory_concepts:
+  - key: integration
+  - key: gui
+  - key: file_storage
+  - key: database
+  - key: application_flow
+  mini_application:
+    tr: Öğrenci takip sistemi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_32_integrated_gui_file_database_app.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: final_project_guide_assessment
+  chapter_number: 33
+  title:
+    tr: Final Proje Rehberi ve Teslim Ölçütleri
+    en: Final Project Guide and Submission Criteria
+  part:
+    tr: Kısım VIII — Veritabanı, Bütünleşik Uygulama ve Final Projesi
+    en: Book Part
+  chapter_type: final_project
+  purpose:
+    tr: Öğrenciyi bağımsız proje geliştirmeye yönlendirmek.
+    en: Öğrenciyi bağımsız proje geliştirmeye yönlendirmek.
+  mandatory_concepts:
+  - key: project_planning
+  - key: requirements
+  - key: testing
+  - key: documentation
+  - key: rubric
+  mini_application:
+    tr: Tamamlanmış masaüstü uygulaması
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/chapter_33_final_project_guide_assessment.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: appendix_common_java_errors
+  chapter_number: A
+  title:
+    tr: Sık Yapılan Java Hataları ve Çözüm Rehberi
+    en: Common Java Errors and Solution Guide
+  part:
+    tr: Ekler
+    en: Appendices
+  chapter_type: appendix
+  purpose:
+    tr: Derleme ve çalışma zamanı hatalarını tanımayı desteklemek.
+    en: Derleme ve çalışma zamanı hatalarını tanımayı desteklemek.
+  mandatory_concepts:
+  - key: syntax_error
+  - key: compile_error
+  - key: runtime_error
+  - key: logic_error
+  - key: debugging
+  mini_application:
+    tr: Hata rehberi
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/appendix_a_common_java_errors.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: appendix_javafx_overview
+  chapter_number: B
+  title:
+    tr: JavaFX’e Kısa Bakış
+    en: Short Overview of JavaFX
+  part:
+    tr: Ekler
+    en: Appendices
+  chapter_type: appendix
+  purpose:
+    tr: Swing sonrası modern GUI yaklaşımına kısa geçiş yapmak.
+    en: Swing sonrası modern GUI yaklaşımına kısa geçiş yapmak.
+  mandatory_concepts:
+  - key: javafx
+  - key: stage
+  - key: scene
+  - key: node
+  - key: fx_application
+  mini_application:
+    tr: JavaFX geçiş notu
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/appendix_b_javafx_overview.md
+  required_code_examples: []
+  required_diagrams: []
+- chapter_id: appendix_project_ideas_rubrics
+  chapter_number: C
+  title:
+    tr: Mini Proje Fikirleri ve Rubrikler
+    en: Mini Project Ideas and Rubrics
+  part:
+    tr: Ekler
+    en: Appendices
+  chapter_type: appendix
+  purpose:
+    tr: Ders içi uygulama ve final projeleri için fikir havuzu sağlamak.
+    en: Ders içi uygulama ve final projeleri için fikir havuzu sağlamak.
+  mandatory_concepts:
+  - key: project_idea
+  - key: scope
+  - key: deliverable
+  - key: assessment
+  - key: rubric
+  mini_application:
+    tr: Proje fikir havuzu
+  generated_markdown:
+    tr: generated/java_fundamentals/tr/chapters/appendix_c_project_ideas_rubrics.md
+  required_code_examples: []
+  required_diagrams: []
+post_production:
+  profile_file: configs/post_production_profile_java_fundamentals.yaml
+  enabled: true
+  stages:
+  - merge
+  - prepare-mermaid
+  - render-mermaid
+  - pandoc
+  - fix-docx
+  - optimize-tables
+  reference_docx: templates/reference_docs/referenceV17_java_temelleri.docx
+  lua_filter: templates/lua_filters/styles_revised_v17.lua
+  docx_postprocess:
+    center_images: true
+    optimize_tables: true
+    safe_format_fix: true

@@ -1,0 +1,13 @@
+fixed_phrases:
+  chapter_roadmap:
+    tr: "Bölümün yol haritası"
+    en: "Chapter roadmap"
+    de: "Kapitelübersicht"
+  learning_outcomes:
+    tr: "Öğrenme çıktıları"
+    en: "Learning outcomes"
+    de: "Lernziele"
+  common_mistakes:
+    tr: "Sık yapılan hatalar ve yanlış sezgiler"
+    en: "Common mistakes and misconceptions"
+    de: "Häufige Fehler und Fehlvorstellungen"

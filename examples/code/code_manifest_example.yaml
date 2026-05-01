@@ -1,0 +1,29 @@
+# Example code manifest for generating QR manifest.
+book:
+  book_id: "java_fundamentals"
+  language: "tr"
+
+codes:
+  - id: "java_intro_code01"
+    chapter_id: "java_intro"
+    title: "HelloJava.java"
+    file: "HelloJava.java"
+    github_source_url: "https://github.com/example/java_fundamentals/blob/main/code/java_intro/code01/HelloJava.java"
+    github_page_url: "https://example.github.io/java_fundamentals/tr/java_intro/code01.html"
+    qr: "dual"
+
+  - id: "decision_structures_code01"
+    chapter_id: "decision_structures"
+    title: "BasicIfExample.java"
+    file: "BasicIfExample.java"
+    github_source_url: "https://github.com/example/java_fundamentals/blob/main/code/decision_structures/code01/BasicIfExample.java"
+    github_page_url: "https://example.github.io/java_fundamentals/tr/decision_structures/code01.html"
+    qr: "dual"
+
+  - id: "decision_structures_broken01"
+    chapter_id: "decision_structures"
+    title: "BrokenIfExample.java"
+    file: "BrokenIfExample.java"
+    github_source_url: ""
+    github_page_url: ""
+    qr: "none"

@@ -1,0 +1,178 @@
+# ============================================================
+# BookFactory .gitignore
+# Purpose: keep source, prompts, templates and project docs tracked;
+#          exclude generated outputs, caches, archives and secrets.
+# ============================================================
+
+# ------------------------------------------------------------
+# Python caches / virtual environments
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.eggs/
+build/lib/
+build/bdist.*/
+
+# ------------------------------------------------------------
+# Node / React / frontend caches
+# ------------------------------------------------------------
+node_modules/
+workspace/**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npm/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.vite/
+
+# ------------------------------------------------------------
+# BookFactory generated build outputs
+# Keep only .gitkeep placeholders where present.
+# ------------------------------------------------------------
+build/*
+!build/.gitkeep
+
+workspace/**/build/*
+!workspace/**/build/.gitkeep
+
+workspace/**/dist/*
+!workspace/**/dist/.gitkeep
+
+generated/**/build/*
+!generated/**/build/.gitkeep
+
+generated/**/dist/*
+!generated/**/dist/.gitkeep
+
+# Code extraction / test artifacts
+workspace/**/build/code/
+workspace/**/build/test_reports/
+workspace/**/build/screenshots/
+workspace/**/build/code_manifest*.json
+workspace/**/build/code_manifest*.yaml
+workspace/**/build/code_manifest*.yml
+
+# Java / compiled examples
+*.class
+*.jar
+*.war
+*.ear
+target/
+out/
+
+# ------------------------------------------------------------
+# Screenshot / browser automation artifacts
+# ------------------------------------------------------------
+playwright-report/
+test-results/
+.pw/
+reports/playwright/
+configs/puppeteer_config.json
+
+# ------------------------------------------------------------
+# Cleanup, quarantine and archive outputs
+# ------------------------------------------------------------
+cleanup_reports/
+.cleanup_quarantine/
+docs/archive/
+arsiv/
+archive/
+
+# ------------------------------------------------------------
+# Temporary / backup / local generated files
+# ------------------------------------------------------------
+*.bak
+*.bak_*
+*.old
+*.orig
+*.tmp
+*.temp
+*.log
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.backup
+*~
+
+# ------------------------------------------------------------
+# Generated publication outputs
+# Reference DOCX templates under templates/ are explicitly allowed.
+# ------------------------------------------------------------
+*.docx
+*.pdf
+*.epub
+*.mobi
+!templates/**/*.docx
+!templates/**/*.pdf
+!templates/**/*.epub
+
+# Temporary Word / Office lock files
+~$*.docx
+~$*.xlsx
+~$*.pptx
+*.tmp.docx
+*.docx.bak
+
+# ------------------------------------------------------------
+# Environment variables / secrets
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+secrets.*
+
+# ------------------------------------------------------------
+# OS / editor files
+# ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code user-local settings are machine-specific.
+# Project-level helper files can still be tracked.
+.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# JetBrains / other IDE local files
+.idea/
+*.iml
+
+# ------------------------------------------------------------
+# Jupyter / notebook caches
+# ------------------------------------------------------------
+.ipynb_checkpoints/
+
+# ------------------------------------------------------------
+# Always allow .gitkeep placeholders
+# ------------------------------------------------------------
+!.gitkeep
+# Local Git backups
+.git_backup*/
+.git_disabled*/

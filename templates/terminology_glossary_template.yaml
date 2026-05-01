@@ -1,0 +1,17 @@
+terms:
+  - key: "variable"
+    tr: "değişken"
+    en: "variable"
+    de: "Variable"
+    first_use:
+      tr: "değişken (variable)"
+      en: "variable"
+      de: "Variable"
+  - key: "loop"
+    tr: "döngü"
+    en: "loop"
+    de: "Schleife"
+    first_use:
+      tr: "döngü (loop)"
+      en: "loop"
+      de: "Schleife"

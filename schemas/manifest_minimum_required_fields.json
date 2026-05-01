@@ -1,0 +1,39 @@
+{
+  "framework": "Parametric Computer Book Factory",
+  "version": "2.4.1",
+  "required_top_level_fields": [
+    "book",
+    "language",
+    "audience",
+    "pedagogy",
+    "technical_profile",
+    "content_scope",
+    "sources",
+    "capabilities",
+    "automation",
+    "approval_gates",
+    "chapters"
+  ],
+  "required_book_fields": [
+    "book_id",
+    "title",
+    "author",
+    "year",
+    "book_type",
+    "domain",
+    "primary_technology"
+  ],
+  "required_language_fields": [
+    "primary_language",
+    "output_languages",
+    "generation_mode",
+    "file_naming_language"
+  ],
+  "required_chapter_fields": [
+    "chapter_id",
+    "title",
+    "chapter_type",
+    "purpose",
+    "mandatory_concepts"
+  ]
+}

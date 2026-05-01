@@ -1,0 +1,42 @@
+{
+  "name": "BookFactory Codespace",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {},
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "redhat.java",
+        "vscjava.vscode-java-pack",
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.terminal.activateEnvironment": false,
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n"
+      }
+    }
+  },
+  "containerEnv": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "BOOKFACTORY_CODESPACES": "1",
+    "BOOKFACTORY_VERSION_CHECK_TIMEOUT_SEC": "10",
+    "PUPPETEER_CACHE_DIR": "/usr/local/share/puppeteer"
+  },
+  "forwardPorts": [8501],
+  "portsAttributes": {
+    "8501": {
+      "label": "BookFactory Dashboard",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+  "postAttachCommand": "python -m bookfactory doctor --soft || true",
+  "remoteUser": "vscode"
+}

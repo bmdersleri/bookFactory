@@ -1,0 +1,113 @@
+project_root: "../../.."
+
+book:
+  book_id: "minimal_java_demo"
+  title:
+    tr: "Minimal Java Demo Kitabı"
+  author: "Example Author"
+  year: "2026"
+
+language:
+  content_language: "tr-TR"
+
+chapters:
+  - order: 1
+    chapter_id: "java_intro"
+    source: "examples/minimal_book/chapters/chapter_01_java_intro.md"
+  - order: 2
+    chapter_id: "decision_structures"
+    source: "examples/minimal_book/chapters/chapter_02_decision_structures.md"
+
+post_production:
+  build:
+    merged_markdown: "examples/minimal_book/build/minimal_java_demo_merged.md"
+    output_docx: "examples/minimal_book/dist/minimal_java_demo.docx"
+    report: "examples/minimal_book/build/reports/post_production_report.md"
+
+  mermaid:
+    enabled: true
+    output_dir: "examples/minimal_book/build/mermaid_images"
+    background: "white"
+    puppeteer_config: "configs/puppeteer_config.json"
+    pdf_fit: true
+
+  assets:
+    manual_override: true
+    auto_dir: "assets/auto"
+    manual_dir: "assets/manual"
+    locked_dir: "assets/locked"
+    final_dir: "assets/final"
+
+  qr:
+    enabled: true
+    manifest: "examples/minimal_book/build/qr_manifest.yaml"
+    output_dir: "examples/minimal_book/build/qr"
+    report: "examples/minimal_book/build/reports/qr_generation_report.md"
+    allow_missing_manifest: true
+
+  pandoc:
+    from: "markdown+tex_math_single_backslash"
+    reference_docx: "templates/reference_docs/referenceV17_java_temelleri.docx"
+    lua_filter: "templates/lua_filters/styles_revised_v17.lua"
+    toc: true
+    toc_depth: 2
+
+  docx_postprocess:
+    enabled: true
+    format_fix_tool: "fix_docx_format_ooxml.py"
+    fix_table_headers: true
+    center_images: true
+    optimize_tables: true
+
+  quality_gates:
+    stop_on_missing_chapter: true
+    stop_on_missing_reference_docx: true
+    stop_on_missing_lua_filter: true
+
+# v2.5.0 code validation demo profile
+code_validation:
+  enabled: true
+  execution_mode: "local"
+  chapters_dir: "examples/minimal_book/chapters"
+  out_dir: "examples/minimal_book/build/code"
+  manifest_json: "examples/minimal_book/build/code_manifest.json"
+  manifest_yaml: "examples/minimal_book/build/code_manifest.yaml"
+  report_json: "examples/minimal_book/build/test_reports/code_test_report.json"
+  report_md: "examples/minimal_book/build/test_reports/code_test_report.md"
+  repair_prompts_dir: "examples/minimal_book/build/repair_prompts"
+  timeout_sec: 10
+  fail_on_error: true
+
+# v2.7.0 export demo profile
+exports:
+  output_dir: "examples/minimal_book/dist"
+  formats:
+    - markdown
+    - html
+    - epub
+    - site
+  report_json: "examples/minimal_book/build/reports/export_report.json"
+  report_md: "examples/minimal_book/build/reports/export_report.md"
+  markdown:
+    output: "examples/minimal_book/dist/minimal_java_demo_merged.md"
+  html:
+    output: "examples/minimal_book/dist/minimal_java_demo.html"
+    css: "templates/export/html/bookfactory.css"
+  epub:
+    output: "examples/minimal_book/dist/minimal_java_demo.epub"
+    css: "templates/export/epub/epub.css"
+  site:
+    output_dir: "examples/minimal_book/dist/site"
+
+
+# v2.8.0 glossary/index demo profile
+indexing:
+  enabled: true
+  output_dir: "examples/minimal_book/build/index"
+  reference_mode: "section"
+  include_review_prompt: true
+
+dashboard:
+  enabled: true
+  local_only: true
+  default_profile: "examples/minimal_book/configs/post_production_profile_minimal.yaml"

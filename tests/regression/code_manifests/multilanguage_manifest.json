@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "items": [
+    {
+      "id": "java_adapter_smoke",
+      "chapter_id": "regression",
+      "language": "java",
+      "file": "HelloAdapter.java",
+      "code_path": "tests/regression/sample_code/HelloAdapter.java",
+      "main_class": "HelloAdapter",
+      "extract": true,
+      "test": "compile_run_assert",
+      "expected_stdout_contains": "Hello from Java adapter"
+    },
+    {
+      "id": "python_adapter_smoke",
+      "chapter_id": "regression",
+      "language": "python",
+      "file": "hello.py",
+      "code_path": "tests/regression/sample_code/hello.py",
+      "extract": true,
+      "test": "compile_run_assert",
+      "expected_stdout_contains": "Hello from Python adapter"
+    },
+    {
+      "id": "javascript_adapter_smoke",
+      "chapter_id": "regression",
+      "language": "javascript",
+      "file": "hello.js",
+      "code_path": "tests/regression/sample_code/hello.js",
+      "extract": true,
+      "test": "compile_run_assert",
+      "expected_stdout_contains": "Hello from JavaScript adapter"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+schema_version: "1.0"
+generated_at: "2026-04-30T13:21:00.939354+00:00"
+generator: "tools/code/extract_code_blocks.py"
+item_count: 2
+warnings: "[]"
+items:
+  -
+    id: "java_intro_code01"
+    chapter_id: "java_intro"
+    language: "java"
+    kind: "example"
+    title_key: "hello_java"
+    file: "HelloJava.java"
+    source_markdown: "examples\minimal_book\chapters\chapter_01_java_intro.md"
+    code_path: "examples\minimal_book\build\code\java_intro\java_intro_code01\HelloJava.java"
+    fence_language: "java"
+    extract: true
+    test: "compile_run_assert"
+    github: true
+    qr: "dual"
+    expected_stdout_contains:
+      - "Merhaba Java"
+    timeout_sec: 5
+    main_class: "HelloJava"
+  -
+    id: "decision_structures_code01"
+    chapter_id: "decision_structures"
+    language: "java"
+    kind: "example"
+    title_key: "basic_if_example"
+    file: "BasicIfExample.java"
+    source_markdown: "examples\minimal_book\chapters\chapter_02_decision_structures.md"
+    code_path: "examples\minimal_book\build\code\decision_structures\decision_structures_code01\BasicIfExample.java"
+    fence_language: "java"
+    extract: true
+    test: "compile_run_assert"
+    github: true
+    qr: "dual"
+    expected_stdout_contains:
+      - "Geçti"
+    timeout_sec: 5
+    main_class: "BasicIfExample"

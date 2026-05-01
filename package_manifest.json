@@ -1,0 +1,31 @@
+{
+  "package": "BookFactory",
+  "version": "2.11.0",
+  "release_date": "2026-04-30",
+  "release_type": "dashboard-ci-code-pages",
+  "base_version": "2.10.0",
+  "file_count_excluding_manifest_and_checksums": 169,
+  "highlights": [
+    "Real read-only Streamlit dashboard panels",
+    "GitHub Actions CI workflow",
+    "Rich static code page rendering",
+    "render-code-pages CLI command",
+    "Cleaned changelog and release gates",
+    "Fixed GitHub tooling shared loader issue"
+  ],
+  "primary_entrypoints": [
+    "python -m bookfactory version",
+    "python -m bookfactory dashboard --check",
+    "python -m bookfactory render-code-pages --help",
+    "python -m bookfactory test-minimal --fail-on-error",
+    "python -m bookfactory codespaces-check --fail-on-error"
+  ],
+  "generated_artifacts": [
+    "RELEASE_NOTES_v2_11_0.md",
+    "docs/v2_11_0_test_report.md",
+    ".github/workflows/bookfactory-ci.yml",
+    "docs/code_pages.md",
+    "docs/dashboard.md",
+    "checksums.sha256"
+  ]
+}

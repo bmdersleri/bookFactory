@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BookFactory CODE_META Manifest Item",
+  "type": "object",
+  "required": ["id", "chapter_id", "language", "file", "extract", "test"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+$"},
+    "chapter_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+$"},
+    "language": {"type": "string", "enum": ["java", "python", "javascript", "bash", "text"]},
+    "kind": {"type": "string"},
+    "title_key": {"type": "string"},
+    "file": {"type": "string"},
+    "main_class": {"type": "string"},
+    "extract": {"type": "boolean"},
+    "test": {"type": "string", "enum": ["none", "compile", "compile_run", "compile_run_assert"]},
+    "stdin": {"type": "string"},
+    "args": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+    "expected_stdout_contains": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+    "expected_stderr_contains": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+    "timeout_sec": {"type": "integer", "minimum": 1, "maximum": 300},
+    "sandbox": {"type": "string", "enum": ["local", "docker", "local_or_docker"]},
+    "github": {"type": "boolean"},
+    "qr": {"type": "string", "enum": ["none", "source", "page", "dual"]}
+  },
+  "additionalProperties": true
+}

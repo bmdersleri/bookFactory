@@ -1,0 +1,26 @@
+# Example asset manifest for manual asset override testing.
+# Priority rule: manual > locked > auto.
+assets:
+  - id: "decision_structures_diagram01"
+    chapter_id: "decision_structures"
+    type: "diagram"
+    title:
+      tr: "Karar yapılarında program akışı"
+      en: "Program flow in decision structures"
+    auto_path: "assets/auto/diagrams/decision_structures_diagram01.png"
+    manual_path: "assets/manual/diagrams/decision_structures_diagram01.png"
+    locked_path: "assets/locked/diagrams/decision_structures_diagram01.png"
+    final_path: "assets/final/diagrams/decision_structures_diagram01.png"
+    manual_override: true
+
+  - id: "java_intro_screenshot01"
+    chapter_id: "java_intro"
+    type: "screenshot"
+    title:
+      tr: "İlk Java programının konsol çıktısı"
+      en: "Console output of the first Java program"
+    auto_path: "assets/auto/screenshots/java_intro_screenshot01.png"
+    manual_path: "assets/manual/screenshots/java_intro_screenshot01.png"
+    locked_path: "assets/locked/screenshots/java_intro_screenshot01.png"
+    final_path: "assets/final/screenshots/java_intro_screenshot01.png"
+    manual_override: true

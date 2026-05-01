@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.1",
+  "generated_at": "2026-04-30T13:37:01.601069+00:00",
+  "manifest": "C:\\OneDrive\\OneDrive - mehmetakif.edu.tr\\BookFactory\\examples\\minimal_book\\build\\code_manifest.json",
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "adapter_summary": {
+    "java": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "id": "java_intro_code01",
+      "chapter_id": "java_intro",
+      "language": "java",
+      "test": "compile_run_assert",
+      "file": "HelloJava.java",
+      "code_path": "C:\\OneDrive\\OneDrive - mehmetakif.edu.tr\\BookFactory\\examples\\minimal_book\\build\\code\\java_intro\\java_intro_code01\\HelloJava.java",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "compile",
+          "command": [
+            "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath\\javac.EXE",
+            "-encoding",
+            "UTF-8",
+            "HelloJava.java"
+          ],
+          "cwd": "C:\\OneDrive\\OneDrive - mehmetakif.edu.tr\\BookFactory\\examples\\minimal_book\\build\\code\\java_intro\\java_intro_code01",
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        {
+          "name": "run",
+          "command": [
+            "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath\\java.EXE",
+            "HelloJava"
+          ],
+          "cwd": "C:\\OneDrive\\OneDrive - mehmetakif.edu.tr\\BookFactory\\examples\\minimal_book\\build\\code\\java_intro\\java_intro_code01",
+          "returncode": 0,
+          "stdout": "Merhaba Java\n",
+          "stderr": "",
+          "timed_out": false
+        }
+      ],
+      "assertions": [
+        {
+          "stream": "stdout",
+          "contains": "Merhaba Java",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "decision_structures_code01",
+      "chapter_id": "decision_structures",
+      "language": "java",
+      "test": "compile_run_assert",
+      "file": "BasicIfExample.java",
+      "code_path": "C:\\OneDrive\\OneDrive - mehmetakif.edu.tr\\BookFactory\\examples\\minimal_book\\build\\code\\decision_structures\\decision_structures_code01\\BasicIfExample.java",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "compile",
+          "command": [
+            "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath\\javac.EXE",
+            "-encoding",
+            "UTF-8",
+            "BasicIfExample.java"
+          ],
+          "cwd": "C:\\OneDrive\\OneDrive - mehmetakif.edu.tr\\BookFactory\\examples\\minimal_book\\build\\code\\decision_structures\\decision_structures_code01",
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        {
+          "name": "run",
+          "command": [
+            "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath\\java.EXE",
+            "BasicIfExample"
+          ],
+          "cwd": "C:\\OneDrive\\OneDrive - mehmetakif.edu.tr\\BookFactory\\examples\\minimal_book\\build\\code\\decision_structures\\decision_structures_code01",
+          "returncode": 0,
+          "stdout": "Geçti\n",
+          "stderr": "",
+          "timed_out": false
+        }
+      ],
+      "assertions": [
+        {
+          "stream": "stdout",
+          "contains": "Geçti",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

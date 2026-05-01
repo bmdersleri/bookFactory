@@ -1,0 +1,184 @@
+project_root: ..
+book:
+  book_id: java_fundamentals
+  title:
+    tr: Java'nın Temelleri
+    en: Java Fundamentals
+  author: İsmail Kırbaş
+  year: '2026'
+language:
+  content_language: tr-TR
+chapters:
+- order: 1
+  chapter_id: java_introduction
+  source: generated/java_fundamentals/tr/chapters/chapter_01_java_introduction.md
+- order: 2
+  chapter_id: development_environment
+  source: generated/java_fundamentals/tr/chapters/chapter_02_development_environment.md
+- order: 3
+  chapter_id: basic_program_structure
+  source: generated/java_fundamentals/tr/chapters/chapter_03_basic_program_structure.md
+- order: 4
+  chapter_id: variables_data_types_constants
+  source: generated/java_fundamentals/tr/chapters/chapter_04_variables_data_types_constants.md
+- order: 5
+  chapter_id: type_conversions_numeric_operations
+  source: generated/java_fundamentals/tr/chapters/chapter_05_type_conversions_numeric_operations.md
+- order: 6
+  chapter_id: operators_expressions
+  source: generated/java_fundamentals/tr/chapters/chapter_06_operators_expressions.md
+- order: 7
+  chapter_id: console_input_scanner
+  source: generated/java_fundamentals/tr/chapters/chapter_07_console_input_scanner.md
+- order: 8
+  chapter_id: decision_structures
+  source: generated/java_fundamentals/tr/chapters/chapter_08_decision_structures.md
+- order: 9
+  chapter_id: while_do_while_loops
+  source: generated/java_fundamentals/tr/chapters/chapter_09_while_do_while_loops.md
+- order: 10
+  chapter_id: for_loops_patterns
+  source: generated/java_fundamentals/tr/chapters/chapter_10_for_loops_patterns.md
+- order: 11
+  chapter_id: algorithmic_problem_solving_patterns
+  source: generated/java_fundamentals/tr/chapters/chapter_11_algorithmic_problem_solving_patterns.md
+- order: 12
+  chapter_id: methods_decomposition_reuse
+  source: generated/java_fundamentals/tr/chapters/chapter_12_methods_decomposition_reuse.md
+- order: 13
+  chapter_id: method_overloading_recursion
+  source: generated/java_fundamentals/tr/chapters/chapter_13_method_overloading_recursion.md
+- order: 14
+  chapter_id: one_dimensional_arrays
+  source: generated/java_fundamentals/tr/chapters/chapter_14_one_dimensional_arrays.md
+- order: 15
+  chapter_id: multidimensional_arrays
+  source: generated/java_fundamentals/tr/chapters/chapter_15_multidimensional_arrays.md
+- order: 16
+  chapter_id: string_processing_text_problems
+  source: generated/java_fundamentals/tr/chapters/chapter_16_string_processing_text_problems.md
+- order: 17
+  chapter_id: math_random_datetime
+  source: generated/java_fundamentals/tr/chapters/chapter_17_math_random_datetime.md
+- order: 18
+  chapter_id: packages_import_project_structure
+  source: generated/java_fundamentals/tr/chapters/chapter_18_packages_import_project_structure.md
+- order: 19
+  chapter_id: arraylist_dynamic_lists
+  source: generated/java_fundamentals/tr/chapters/chapter_19_arraylist_dynamic_lists.md
+- order: 20
+  chapter_id: hashmap_hashset_collection_choice
+  source: generated/java_fundamentals/tr/chapters/chapter_20_hashmap_hashset_collection_choice.md
+- order: 21
+  chapter_id: exception_handling
+  source: generated/java_fundamentals/tr/chapters/chapter_21_exception_handling.md
+- order: 22
+  chapter_id: file_operations
+  source: generated/java_fundamentals/tr/chapters/chapter_22_file_operations.md
+- order: 23
+  chapter_id: classes_objects_applied_intro
+  source: generated/java_fundamentals/tr/chapters/chapter_23_classes_objects_applied_intro.md
+- order: 24
+  chapter_id: constructor_this_encapsulation
+  source: generated/java_fundamentals/tr/chapters/chapter_24_constructor_this_encapsulation.md
+- order: 25
+  chapter_id: inheritance_interface_preview
+  source: generated/java_fundamentals/tr/chapters/chapter_25_inheritance_interface_preview.md
+- order: 26
+  chapter_id: gui_swing_architecture
+  source: generated/java_fundamentals/tr/chapters/chapter_26_gui_swing_architecture.md
+- order: 27
+  chapter_id: layout_management_ui_design
+  source: generated/java_fundamentals/tr/chapters/chapter_27_layout_management_ui_design.md
+- order: 28
+  chapter_id: basic_swing_components
+  source: generated/java_fundamentals/tr/chapters/chapter_28_basic_swing_components.md
+- order: 29
+  chapter_id: event_handling_form_validation
+  source: generated/java_fundamentals/tr/chapters/chapter_29_event_handling_form_validation.md
+- order: 30
+  chapter_id: lists_tables_menus_dialogs
+  source: generated/java_fundamentals/tr/chapters/chapter_30_lists_tables_menus_dialogs.md
+- order: 31
+  chapter_id: jdbc_database_intro
+  source: generated/java_fundamentals/tr/chapters/chapter_31_jdbc_database_intro.md
+- order: 32
+  chapter_id: integrated_gui_file_database_app
+  source: generated/java_fundamentals/tr/chapters/chapter_32_integrated_gui_file_database_app.md
+- order: 33
+  chapter_id: final_project_guide_assessment
+  source: generated/java_fundamentals/tr/chapters/chapter_33_final_project_guide_assessment.md
+- order: 34
+  chapter_id: appendix_common_java_errors
+  source: generated/java_fundamentals/tr/chapters/appendix_a_common_java_errors.md
+- order: 35
+  chapter_id: appendix_javafx_overview
+  source: generated/java_fundamentals/tr/chapters/appendix_b_javafx_overview.md
+- order: 36
+  chapter_id: appendix_project_ideas_rubrics
+  source: generated/java_fundamentals/tr/chapters/appendix_c_project_ideas_rubrics.md
+post_production:
+  build:
+    merged_markdown: build/java_fundamentals/tr/java_fundamentals_merged.md
+    output_docx: dist/java_fundamentals_tr.docx
+    report: build/reports/post_production_report.md
+  mermaid:
+    enabled: true
+    output_dir: build/java_fundamentals/tr/mermaid_images
+    background: white
+    puppeteer_config: configs/puppeteer_config.json
+    pdf_fit: true
+    docx_width: 4.90in
+  assets:
+    manual_override: true
+    auto_dir: assets/auto
+    manual_dir: assets/manual
+    locked_dir: assets/locked
+    final_dir: assets/final
+  qr:
+    enabled: true
+    manifest: build/java_fundamentals/tr/qr_manifest.yaml
+    output_dir: assets/auto/qr
+    report: build/reports/qr_generation_report.md
+    allow_missing_manifest: true
+    code_source_qr: language_independent
+    code_page_qr: language_specific
+  pandoc:
+    from: markdown+tex_math_single_backslash
+    reference_docx: templates/reference_docs/referenceV17_java_temelleri.docx
+    lua_filter: templates/lua_filters/styles_revised_v17.lua
+    toc: true
+    toc_depth: 2
+    metadata:
+      toc-title: İçindekiler
+  docx_postprocess:
+    enabled: true
+    format_fix_tool: fix_docx_format_ooxml.py
+    fix_table_headers: true
+    center_images: true
+    center_h1: true
+    center_end_markers: true
+    justify_pedagogic_boxes: true
+    optimize_tables: true
+    table_mode: proportional
+    backup_before_in_place: true
+  quality_gates:
+    stop_on_missing_chapter: true
+    stop_on_missing_reference_docx: true
+    stop_on_missing_lua_filter: true
+    stop_on_mermaid_render_error: true
+    stop_on_pandoc_error: true
+
+# v2.5.0 optional code validation profile
+code_validation:
+  enabled: true
+  execution_mode: "local_or_docker"
+  chapters_dir: "generated/java_fundamentals/tr/chapters"
+  out_dir: "build/java_fundamentals/code"
+  manifest_json: "build/java_fundamentals/code_manifest.json"
+  manifest_yaml: "build/java_fundamentals/code_manifest.yaml"
+  report_json: "build/java_fundamentals/test_reports/code_test_report.json"
+  report_md: "build/java_fundamentals/test_reports/code_test_report.md"
+  repair_prompts_dir: "build/java_fundamentals/repair_prompts"
+  timeout_sec: 10
+  fail_on_error: true

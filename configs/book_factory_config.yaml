@@ -1,0 +1,10 @@
+framework:
+  name: "Parametric Computer Book Factory"
+  version: "2.3-stabilized"
+
+defaults:
+  file_naming_language: "en"
+  manifest_language: "en"
+  automation_language: "en"
+  numbering_policy: "build_time"
+  manual_asset_override: true

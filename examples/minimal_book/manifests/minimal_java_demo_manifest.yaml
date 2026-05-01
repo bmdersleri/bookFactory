@@ -1,0 +1,140 @@
+schema_version: "2.4"
+
+book:
+  book_id: "minimal_java_demo"
+  title:
+    tr: "Minimal Java Demo Kitabı"
+    en: "Minimal Java Demo Book"
+  subtitle:
+    tr: "BookFactory uçtan uca test örneği"
+    en: "End-to-end BookFactory test example"
+  author: "Example Author"
+  year: "2026"
+  book_type: "demo"
+  domain: "programming"
+  primary_technology: "Java"
+  target_output_formats:
+    - markdown
+    - docx
+    - epub
+    - html
+
+language:
+  primary_language: "tr"
+  output_languages:
+    - "tr"
+  generation_mode: "single"
+  file_naming_language: "en"
+  manifest_language: "en"
+  automation_language: "en"
+
+audience:
+  primary:
+    - "Demo kullanıcıları"
+  assumed_background:
+    - "Temel bilgisayar okuryazarlığı"
+  not_assumed:
+    - "İleri Java bilgisi"
+  target_level: "beginner"
+
+pedagogy:
+  approach:
+    - "Kısa açıklama"
+    - "Çalışan örnek"
+    - "Mini alıştırma"
+  default_chapter_flow:
+    - "Chapter roadmap"
+    - "Learning outcomes"
+    - "Concept explanation"
+    - "Code example"
+    - "Summary"
+
+technical_profile:
+  code_language: "java"
+  runtime:
+    name: "JDK"
+    min_version: "17"
+  code_execution_policy:
+    compile_check: true
+    broken_examples_marked: true
+
+content_scope:
+  include:
+    - "Java introduction"
+    - "Decision structures"
+  exclude:
+    - "Advanced OOP"
+    - "Spring Boot"
+
+sources:
+  priority_policy:
+    - "official_documentation"
+  required_sources:
+    - title: "Java Documentation"
+      type: "official_documentation"
+
+capabilities:
+  code_examples: true
+  runnable_projects: false
+  mermaid_diagrams: true
+  screenshots: false
+  qr_codes: true
+  github_export: false
+  docx_build: true
+  multilingual_output: false
+
+automation:
+  numbering_policy: "build_time"
+  chapter_id_policy: "stable_slug"
+  heading_numbering: false
+  figure_numbering: "build_time"
+  table_numbering: "build_time"
+  code_numbering: "build_time"
+  qr_policy: "manifest_based"
+  manual_asset_override: true
+
+approval_gates:
+  manifest_validation: "required"
+  chapter_input_generation: "optional"
+  outline_review: "optional"
+  full_text_generation: "optional"
+  post_production_build: "optional"
+
+chapters:
+  - order: 1
+    chapter_id: "java_intro"
+    title:
+      tr: "Java’ya Kısa Giriş"
+      en: "A Short Introduction to Java"
+    chapter_type: "demo"
+    purpose:
+      tr: "Java çalışma akışını kısa bir örnekle göstermek."
+    mandatory_concepts:
+      - "JDK"
+      - "JVM"
+      - "bytecode"
+    required_code_examples:
+      - id: "java_intro_code01"
+        title: "HelloJava.java"
+        file: "HelloJava.java"
+        kind: "example"
+
+  - order: 2
+    chapter_id: "decision_structures"
+    title:
+      tr: "Karar Yapılarına Kısa Bakış"
+      en: "A Short Look at Decision Structures"
+    chapter_type: "demo"
+    purpose:
+      tr: "if yapısını küçük bir kodla göstermek."
+    mandatory_concepts:
+      - "if"
+      - "else"
+    required_code_examples:
+      - id: "decision_structures_code01"
+        title: "BasicIfExample.java"
+        file: "BasicIfExample.java"
+        kind: "example"
+
+post_production:
+  enabled: true

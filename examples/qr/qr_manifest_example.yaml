@@ -1,0 +1,14 @@
+# Example QR manifest for Parametric Computer Book Factory
+# Copy this file to build/{book_id}/{language}/qr_manifest.yaml and update URLs.
+
+qr:
+  entries:
+    - id: "decision_structures_code01_source"
+      title: "Decision Structures Code 01 Source"
+      url: "https://github.com/example/java_fundamentals/blob/main/code/decision_structures/code01/BasicIfExample.java"
+      output: "assets/auto/qr/decision_structures_code01_source.png"
+
+    - id: "decision_structures_code01_page_tr"
+      title: "Decision Structures Code 01 Turkish Explanation Page"
+      url: "https://example.github.io/java_fundamentals/tr/decision_structures/code01.html"
+      output: "assets/auto/qr/decision_structures_code01_page_tr.png"

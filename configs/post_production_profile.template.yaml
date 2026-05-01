@@ -1,0 +1,88 @@
+project_root: ".."
+
+book:
+  book_id: "sample_book"
+  title:
+    tr: "Örnek Kitap"
+    en: "Sample Book"
+  author: "Author Name"
+  year: "2026"
+
+language:
+  content_language: "tr-TR"
+
+chapters:
+  - order: 1
+    chapter_id: "chapter_one"
+    source: "generated/sample_book/tr/chapters/chapter_01_chapter_one.md"
+
+post_production:
+  build:
+    merged_markdown: "build/sample_book/tr/sample_book_merged.md"
+    output_docx: "dist/sample_book_tr.docx"
+    report: "build/reports/post_production_report.md"
+
+  mermaid:
+    enabled: true
+    output_dir: "build/sample_book/tr/mermaid_images"
+    background: "white"
+    puppeteer_config: "configs/puppeteer_config.json"
+    pdf_fit: true
+    docx_width: "4.90in"
+
+  assets:
+    manual_override: true
+    auto_dir: "assets/auto"
+    manual_dir: "assets/manual"
+    locked_dir: "assets/locked"
+    final_dir: "assets/final"
+
+  qr:
+    enabled: false
+    manifest: "build/{book_id}/{language}/qr_manifest.yaml"
+    output_dir: "assets/auto/qr"
+    report: "build/reports/qr_generation_report.md"
+    allow_missing_manifest: true
+
+  pandoc:
+    from: "markdown+tex_math_single_backslash"
+    reference_docx: "templates/reference_docs/referenceV17_java_temelleri.docx"
+    lua_filter: "templates/lua_filters/styles_revised_v17.lua"
+    toc: true
+    toc_depth: 2
+
+  docx_postprocess:
+    enabled: true
+    format_fix_tool: "fix_docx_format_ooxml.py"
+    fix_table_headers: true
+    optimize_tables: true
+    table_mode: "proportional"
+
+# v2.5.0 optional code validation stage
+code_validation:
+  enabled: false
+  execution_mode: "local"
+  chapters_dir: "generated/chapters"
+  out_dir: "build/code"
+  manifest_json: "build/code_manifest.json"
+  manifest_yaml: "build/code_manifest.yaml"
+  report_json: "build/test_reports/code_test_report.json"
+  report_md: "build/test_reports/code_test_report.md"
+  repair_prompts_dir: "build/repair_prompts"
+  timeout_sec: 10
+  fail_on_error: true
+
+# v2.6.0 optional GitHub and QR hardening settings
+github_sync:
+  enabled: false
+  owner: "example-owner"
+  repo: "example-book-repo"
+  branch: "main"
+  code_root: "kodlar"
+  pages_root: "docs/kodlar"
+  require_tests_passed: true
+  push: false
+
+qr_hardening:
+  use_enriched_code_manifest: true
+  strict_url: true

@@ -1,0 +1,18 @@
+book:
+  book_id: "minimal_java_demo"
+  language: "tr"
+
+codes:
+  - id: "java_intro_code01"
+    chapter_id: "java_intro"
+    title: "HelloJava.java"
+    github_source_url: "https://github.com/example/minimal_java_demo/blob/main/code/java_intro/HelloJava.java"
+    github_page_url: "https://example.github.io/minimal_java_demo/tr/java_intro/HelloJava.html"
+    qr: "dual"
+
+  - id: "decision_structures_code01"
+    chapter_id: "decision_structures"
+    title: "BasicIfExample.java"
+    github_source_url: "https://github.com/example/minimal_java_demo/blob/main/code/decision_structures/BasicIfExample.java"
+    github_page_url: "https://example.github.io/minimal_java_demo/tr/decision_structures/BasicIfExample.html"
+    qr: "dual"
