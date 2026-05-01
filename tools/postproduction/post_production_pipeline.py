@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Post-production orchestrator for Parametric Computer Book Factory.
@@ -52,6 +52,15 @@ def require_file(path: Path, label: str) -> None:
         raise FileNotFoundError(f"{label} not found: {path}")
 
 
+def profile_base(profile_path: Path, profile: dict) -> Path:
+    project_root = profile.get("project_root")
+    if project_root:
+        p = Path(project_root)
+        return p if p.is_absolute() else (Path.cwd() / p).resolve()
+    return Path.cwd()
+
+def repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent.parent
 def validate(profile: dict, base: Path) -> list[str]:
     errors: list[str] = []
     pp = profile.get("post_production", {})
@@ -349,3 +358,5 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
