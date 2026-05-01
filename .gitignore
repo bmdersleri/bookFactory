@@ -181,3 +181,5 @@ desktop.ini
 workspace/**/chapters/*_before_quality_fix_*.md
 workspace/**/chapters/*backup*.md
 workspace/**/chapters/*_backup*.md
+
+workspace/
