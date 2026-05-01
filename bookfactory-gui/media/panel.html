@@ -139,7 +139,9 @@ tr:hover td{background:var(--vscode-list-hoverBackground)}
       <h3>Markdown kalite kontrolü</h3>
       <div class="card-desc">Bölüm başlık yapısı, CODE_META yerleşimi, screenshot marker kontrolü.</div>
       <div class="row" style="margin-top:8px">
-        <input type="text" id="quality-chapter" placeholder="chapters/chapter_01_giris.md">
+        <select id="quality-chapter" style="flex:1;padding:5px 8px;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);border-radius:2px;font-size:13px">
+          <option value="">-- Bölüm seçin --</option>
+        </select>
         <button onclick="runTerminal('Kalite Kontrol', buildQualityCmd())">Kontrol et</button>
       </div>
     </div>
@@ -188,10 +190,11 @@ tr:hover td{background:var(--vscode-list-hoverBackground)}
       <label>Post-production profil dosyası</label>
       <input type="text" id="pp-profile" value="configs/post_production_profile.yaml">
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
-        <button onclick="runStage('merge_chapters')">Bölümleri birleştir</button>
-        <button class="sec" onclick="runStage('extract_mermaid')">Mermaid çıkar</button>
-        <button class="sec" onclick="runStage('render_mermaid')">PNG üret</button>
-        <button class="sec" onclick="runStage('build_docx')">DOCX üret</button>
+        <button onclick="runStage('merge')">Bölümleri birleştir</button>
+        <button class="sec" onclick="runStage('prepare-mermaid')">Mermaid hazırla</button>
+        <button class="sec" onclick="runStage('render-mermaid')">PNG üret</button>
+        <button class="sec" onclick="runStage('pandoc')">DOCX üret</button>
+        <button class="sec" onclick="runStage('generate-qr')">QR üret</button>
         <button style="background:#0e639c" onclick="runStage('all')">Tümünü çalıştır</button>
       </div>
     </div>
@@ -375,6 +378,19 @@ function renderChapters(chapters) {
   summary.innerHTML = '<b>' + total + ' bölüm</b> · ' + totalKb + ' KB<br>' +
     '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
     '<span style="font-size:11px;color:var(--vscode-descriptionForeground)">' + total + '/16 bölüm</span>';
+
+  // Kalite kontrol dropdown'ını doldur
+  var sel = document.getElementById('quality-chapter');
+  if (sel) {
+    sel.innerHTML = '<option value="">-- Bölüm seçin --</option>';
+    chapters.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+    if (chapters.length > 0) sel.value = chapters[0].name;
+  }
 }
 
 function openChapter(name) {
@@ -414,19 +430,21 @@ function buildFullChainCmd() {
   return buildExtractCmd() + ' && ' + buildValidateCodeCmd() + ' && ' + buildTestCmd();
 }
 function buildQualityCmd() {
-  var ch = document.getElementById('quality-chapter').value.trim() || 'chapters/chapter_01.md';
-  var id = ch.replace(/.*chapter_(\d+).*/,'chapter_$1');
-  var no = ch.replace(/.*chapter_(\d+).*/,'$1');
-  return py() + ' -m tools.quality.check_chapter_markdown --chapter ./' + ch + ' --chapter-id ' + id + ' --chapter-no ' + no + ' --report ./build/test_reports/quality_report.md';
+  var sel = document.getElementById('quality-chapter');
+  var ch  = (sel && sel.value) ? sel.value : '';
+  if (!ch) { logWarn('Lütfen bir bölüm seçin.'); return ''; }
+  var id  = ch.replace(/.*chapter_(\d+).*/,'chapter_$1');
+  var no  = String(parseInt(ch.replace(/.*chapter_(\d+).*/,'$1'), 10));
+  return py() + ' -m tools.quality.check_chapter_markdown --chapter ./chapters/' + ch + ' --chapter-id ' + id + ' --chapter-no ' + no + ' --report ./build/test_reports/' + id + '_quality_report.md';
 }
 function buildValidateCmd() {
   return py() + ' -c "import json,yaml,jsonschema; schema=json.load(open(\'' + fw().replace(/\\/g,'\\\\') + '/schemas/book_manifest_schema.json\',encoding=\'utf-8\')); manifest=yaml.safe_load(open(\'manifests/book_manifest.yaml\',encoding=\'utf-8\')); jsonschema.validate(manifest,schema); print(\'Manifest gecerli.\')"';
 }
 function buildMermaidExtractCmd() {
-  return py() + ' "' + fw() + '\\tools\\postproduction\\post_production_pipeline.py" --profile ' + ppProfile() + ' --stage extract_mermaid';
+  return py() + ' "' + fw() + '\\tools\\postproduction\\post_production_pipeline.py" --profile ' + ppProfile() + ' --stage prepare-mermaid';
 }
 function buildMermaidRenderCmd() {
-  return py() + ' "' + fw() + '\\tools\\postproduction\\post_production_pipeline.py" --profile ' + ppProfile() + ' --stage render_mermaid';
+  return py() + ' "' + fw() + '\\tools\\postproduction\\post_production_pipeline.py" --profile ' + ppProfile() + ' --stage render-mermaid';
 }
 function buildQrManifestCmd() {
   return py() + ' "' + fw() + '\\tools\\postproduction\\build_qr_manifest_from_code_manifest.py" --code-manifest ./build/code_manifest.json --output ./build/qr_manifest.yaml';
