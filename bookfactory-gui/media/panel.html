@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
@@ -95,7 +95,7 @@ tr:hover td{background:var(--vscode-list-hoverBackground)}
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
         <button onclick="runTerminal('Ortam Kontrolü', py()+' -m bookfactory doctor --soft')">Ortam kontrolü</button>
         <button class="sec" onclick="runTerminal('Manifest Doğrulama', buildValidateCmd())">Manifest doğrula</button>
-        <button class="sec" onclick="runTerminal('Paket bütünlüğü', buildIntegrityCmd())">Paket bütünlüğü</button>
+        <button class="sec" onclick="runTerminal('Proje Kontrolü', buildProjectCheckCmd())">Proje kontrolü</button>
       </div>
     </div>
   </div>
@@ -437,6 +437,9 @@ function buildQualityCmd() {
   var no  = String(parseInt(ch.replace(/.*chapter_(\d+).*/,'$1'), 10));
   return py() + ' -m tools.quality.check_chapter_markdown --chapter ./chapters/' + ch + ' --chapter-id ' + id + ' --chapter-no ' + no + ' --report ./build/test_reports/' + id + '_quality_report.md';
 }
+function buildProjectCheckCmd() {
+  return py() + ' -c "import os,pathlib; p=pathlib.Path(\".\"); items=[\"chapters:\"+str(len(list((p/\"chapters\").glob(\"*.md\")))),\"manifests:\"+str(len(list((p/\"manifests\").glob(\"*.yaml\")))),\"configs:\"+str(len(list((p/\"configs\").glob(\"*.yaml\"))))]; print(chr(10).join(items))"';
+}
 function buildIntegrityCmd() {
   return py() + ' "' + fw() + '\\tools\\check_package_integrity.py" .';
 }
@@ -553,3 +556,5 @@ vscodeApi.postMessage({ type: 'getConfig' });
 </script>
 </body>
 </html>
+
+

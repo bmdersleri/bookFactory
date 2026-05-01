@@ -92,3 +92,10 @@ All notable changes to BookFactory are documented in this file.
 ### Added
 
 - Post-production and Mermaid rendering improvements.
+
+## v3.1.0-studio-mvp
+
+- BookFactory Studio FastAPI tabanlı yerel web arayüzü eklendi.
+- Kitap mimarisi LLM prompt üretimi, manifest görüntüleme, bölüm prompt üretimi ve Markdown içe aktarma akışı eklendi.
+- Production pipeline adımları için job/log izleme katmanı eklendi.
+- Rapor görüntüleme, Codespaces/GitHub/QR/Mermaid/export orkestrasyon uçları eklendi.

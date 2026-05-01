@@ -419,3 +419,15 @@ MIT Lisansı — ayrıntılar için `LICENSE` dosyasına bakın.
 **Yazar:** Prof. Dr. İsmail KIRBAŞ  
 **Repo:** [github.com/bmdersleri/bookFactory](https://github.com/bmdersleri/bookFactory)  
 **Bağlı kitap projesi:** [github.com/bmdersleri/react-web](https://github.com/bmdersleri/react-web)
+
+
+## BookFactory Studio
+
+Bu paket, mevcut CLI araçlarını bozmadan çalışan yerel bir web arayüzü içerir. Başlatmak için:
+
+```powershell
+python -m pip install -r requirements.txt
+python -m bookfactory_studio.app
+```
+
+Ardından tarayıcıda `http://127.0.0.1:8765` adresini açın. Ayrıntılar için `docs/bookfactory_studio_mvp.md` dosyasına bakın.

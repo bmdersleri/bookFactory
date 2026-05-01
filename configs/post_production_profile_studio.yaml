@@ -1,0 +1,27 @@
+# BookFactory Studio varsayılan post-production profili
+"
+        "post_production:
+"
+        "  chapters_dir: chapters
+"
+        "  build:
+"
+        "    merged_markdown: build/merged_book.md
+"
+        "  assets:
+"
+        "    mermaid_dir: assets/auto/mermaid
+"
+        "    qr_dir: assets/auto/qr
+"
+        "exports:
+"
+        "  output_dir: exports
+"
+        "  formats:
+"
+        "    - docx
+"
+        "    - html
+"
+        

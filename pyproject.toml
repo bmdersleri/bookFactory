@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bookfactory"
+version = "2.11.0"
+description = "Parametric Computer Book Factory"
+requires-python = ">=3.10"
+dependencies = [
+  "pyyaml>=6.0",
+  "python-docx>=1.1.0",
+  "qrcode[pil]>=7.4",
+  "pillow>=10.0",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.7"
+]
+
+[project.scripts]
+bookfactory = "bookfactory.cli:main"
+bookfactory-studio = "bookfactory_studio.app:main"
+
+[project.optional-dependencies]
+dashboard = ["streamlit>=1.33"]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "build>=1.2",
+  "twine>=5.0"
+]
+ci = [
+  "pytest>=8.0",
+  "pyyaml>=6.0"
+]
+all = [
+  "bookfactory[dashboard,dev,ci]"
+]
+
+[tool.setuptools.packages.find]
+include = ["bookfactory*", "bookfactory_studio*"]
+
+[tool.setuptools.package-data]
+bookfactory_studio = ["static/*"]

@@ -1,4 +1,4 @@
-"""
+r"""
 React kitap bölümleri için hafif Markdown kalite kontrol aracı.
 
 Kullanım:
@@ -13,7 +13,29 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from pathlib import Path
+
+
+def _configure_stdio() -> None:
+    """Make console/pipe output robust on Windows Turkish code pages."""
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+
+_configure_stdio()
+
+
+def safe_print(message: str) -> None:
+    try:
+        print(message)
+    except UnicodeEncodeError:
+        print(message.encode("ascii", "backslashreplace").decode("ascii"))
 
 
 def read_text(path: Path) -> str:
@@ -341,9 +363,9 @@ def main() -> int:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text("\n".join(report_lines), encoding="utf-8")
 
-    print(f"OK: {total_ok} | WARN: {total_warn} | FAIL: {total_fail}")
-    print(f"Markdown report: {report_path}")
-    print(f"Decision: {final_decision}")
+    safe_print(f"OK: {total_ok} | WARN: {total_warn} | FAIL: {total_fail}")
+    safe_print(f"Markdown report: {report_path}")
+    safe_print(f"Decision: {final_decision}")
 
     if args.strict and total_fail:
         return 1
