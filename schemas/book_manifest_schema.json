@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/bmdersleri/bookFactory/schemas/book_manifest_schema.json",
+  "title": "BookFactory Kitap Manifesti",
+  "description": "Parametric Computer Book Factory v2.11.x — book_manifest.yaml şeması",
+  "type": "object",
+  "required": ["book", "language", "structure", "approval_gates"],
+  "additionalProperties": false,
+
+  "properties": {
+
+    "book": {
+      "description": "Kitabın temel bibliyografik bilgileri",
+      "type": "object",
+      "required": ["title", "author"],
+      "additionalProperties": false,
+      "properties": {
+        "title":             { "type": "string", "minLength": 3, "description": "Kitap başlığı" },
+        "subtitle":          { "type": "string", "description": "Alt başlık (boş bırakılabilir)" },
+        "author":            { "type": "string", "minLength": 2, "description": "Yazar adı" },
+        "edition":           { "type": "string", "pattern": "^[0-9]+$", "description": "Baskı numarası" },
+        "year":              { "type": "string", "pattern": "^[0-9]{4}$", "description": "Yayın yılı" },
+        "framework_version": {
+          "type": "string",
+          "pattern": "^v[0-9]+\\.[0-9]+(\\.x)?$",
+          "description": "Kullanılan BookFactory sürümü (ör. v2.11.x)"
+        },
+        "isbn":  { "type": "string", "description": "ISBN (opsiyonel)" },
+        "doi":   { "type": "string", "description": "DOI (opsiyonel)" }
+      }
+    },
+
+    "language": {
+      "description": "Dil ve dosya adlandırma politikası",
+      "type": "object",
+      "required": ["primary_language"],
+      "additionalProperties": false,
+      "properties": {
+        "primary_language": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 5,
+          "description": "Birincil içerik dili (ör. tr, en, de)"
+        },
+        "output_languages": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 2 },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Üretilecek diller listesi"
+        },
+        "generation_mode": {
+          "type": "string",
+          "enum": ["sequential", "parallel"],
+          "default": "sequential",
+          "description": "Çok dilli üretim modu"
+        },
+        "file_naming_language": {
+          "type": "string",
+          "enum": ["en"],
+          "default": "en",
+          "description": "Dosya adları her zaman İngilizce olmalıdır"
+        },
+        "manifest_language": {
+          "type": "string",
+          "enum": ["en"],
+          "default": "en"
+        },
+        "automation_language": {
+          "type": "string",
+          "enum": ["en"],
+          "default": "en"
+        }
+      }
+    },
+
+    "cumulative_app": {
+      "description": "Kitap boyunca geliştirilen ana örnek uygulama (opsiyonel)",
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name":        { "type": "string", "minLength": 1, "description": "Uygulama adı (ör. KampüsHub)" },
+        "description": { "type": "string", "description": "Kısa açıklama" },
+        "repo_url":    { "type": "string", "format": "uri", "description": "GitHub repo URL (opsiyonel)" }
+      }
+    },
+
+    "scope": {
+      "description": "Kapsam içi ve kapsam dışı teknolojiler",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stack": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Kitapta kullanılan teknolojiler"
+        },
+        "out_of_scope": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Kapsam dışı — yalnızca 'ileri okuma' olarak anılabilir"
+        }
+      }
+    },
+
+    "structure": {
+      "description": "Bölüm listesi ve sıralaması",
+      "type": "object",
+      "required": ["chapters"],
+      "additionalProperties": false,
+      "properties": {
+        "chapters": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Kitabın bölüm listesi — sıra önemlidir",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "file"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^chapter_[0-9]{2}$",
+                "description": "Bölüm kimliği (ör. chapter_01)"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 3,
+                "description": "Bölüm başlığı (içerik dilinde)"
+              },
+              "file": {
+                "type": "string",
+                "pattern": "^chapter_[0-9]{2}_[a-z0-9_]+\\.md$",
+                "description": "Dosya adı — küçük harf, ASCII, alt çizgi (ör. chapter_01_giris.md)"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["planned", "in_progress", "draft", "review", "done"],
+                "default": "planned",
+                "description": "Bölüm durumu"
+              },
+              "word_count_target": {
+                "type": "integer",
+                "minimum": 500,
+                "description": "Hedef kelime sayısı (opsiyonel)"
+              },
+              "code_blocks_target": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Hedef kod bloğu sayısı (opsiyonel)"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "approval_gates": {
+      "description": "Üretim aşamalarında onay kapısı politikaları",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manifest_validation":       { "$ref": "#/$defs/gate_value" },
+        "chapter_input_generation":  { "$ref": "#/$defs/gate_value" },
+        "outline_review":            { "$ref": "#/$defs/gate_value" },
+        "full_text_generation":      { "$ref": "#/$defs/gate_value" },
+        "code_validation":           { "$ref": "#/$defs/gate_value" },
+        "markdown_quality_check":    { "$ref": "#/$defs/gate_value" },
+        "post_production_build":     { "$ref": "#/$defs/gate_value" }
+      }
+    },
+
+    "code": {
+      "description": "Kod bloğu çıkarma, test ve dağıtım ayarları",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "extract":        { "type": "boolean", "default": true,  "description": "CODE_META bloklarını çıkar" },
+        "test":           { "type": "boolean", "default": true,  "description": "Çıkarılan kodları test et" },
+        "github_sync":    { "type": "boolean", "default": false, "description": "GitHub'a senkronize et" },
+        "qr_generation":  { "type": "boolean", "default": false, "description": "QR kod üret" },
+        "node_command":   { "type": "string",  "default": "node", "description": "Node.js komut yolu" },
+        "test_timeout_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "default": 10000,
+          "description": "Kod testi zaman aşımı (ms)"
+        }
+      }
+    },
+
+    "assets": {
+      "description": "Görsel ve medya varlık ayarları",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "screenshot_automation": { "type": "boolean", "default": false, "description": "Otomatik screenshot" },
+        "mermaid_generation":    { "type": "boolean", "default": true,  "description": "Mermaid → PNG" },
+        "manual_override":       { "type": "boolean", "default": true,  "description": "Manuel görsel önceliği" },
+        "screenshot_base_url":   {
+          "type": "string",
+          "format": "uri",
+          "description": "Screenshot için temel URL (ör. http://localhost:5173)"
+        }
+      }
+    },
+
+    "output": {
+      "description": "Post-production çıktı formatları",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["docx", "html", "epub", "pdf", "zip"]
+          },
+          "uniqueItems": true,
+          "default": ["docx"],
+          "description": "Üretilecek çıktı formatları"
+        },
+        "pandoc_reference_docx": { "type": "string", "description": "Pandoc referans DOCX yolu" },
+        "lua_filter":            { "type": "string", "description": "Pandoc Lua filter yolu" }
+      }
+    }
+  },
+
+  "$defs": {
+    "gate_value": {
+      "type": "string",
+      "enum": ["required", "optional", "skip"],
+      "description": "required: onay olmadan geçilmez | optional: önerilir | skip: atla"
+    }
+  }
+}
