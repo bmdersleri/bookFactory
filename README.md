@@ -1,220 +1,421 @@
-# Parametric Computer Book Factory v2.5.0
+# Parametric Computer Book Factory
 
-Bu paket, bilgisayar bilimleri ve yazılım mühendisliği alanındaki kitap üretimini manifest tabanlı, çok dilli ve LLM tarafından eksiksiz anlaşılabilir hâle getirmek için hazırlanmıştır.
+**Manifest tabanlı, LLM destekli, kod doğrulamalı teknik kitap üretim framework'ü**
 
-Temel ilke:
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
+[![Pandoc](https://img.shields.io/badge/Pandoc-3.x-orange)](https://pandoc.org/)
+[![Sürüm](https://img.shields.io/badge/Sürüm-v2.11.x-purple)]()
+[![Lisans](https://img.shields.io/badge/Lisans-MIT-lightgrey)]()
 
-> Kitap konusu, hedef kitle, bölüm mimarisi, teknik kapsam, kaynak politikası, içerik dili, çok dilli üretim tercihleri, kod/görsel/QR/GitHub politikaları ve onay kapıları `book_manifest.yaml` içinde tanımlanır. LLM, bu manifesti tek doğruluk kaynağı kabul ederek kitap özel prompt paketini ve bölüm girdi promptlarını üretir.
+---
 
-## Kararlar
+## İçindekiler
 
-- Framework adı: **Parametric Computer Book Factory**
-- Teknik dosya ve klasör adları: İngilizce
-- Açıklama belgeleri: Türkçe
-- İçerik dili: Parametrik
-- Çok dilli üretim: Türkçe, İngilizce, Almanca vb.
-- Onay kapıları: Manifestten yönetilir
-- Örnek manifest: `manifests/java_fundamentals_manifest.yaml`
+- [Proje nedir?](#proje-nedir)
+- [Temel ilkeler](#temel-ilkeler)
+- [Özellikler](#özellikler)
+- [Proje yapısı](#proje-yapısı)
+- [Gereksinimler](#gereksinimler)
+- [Kurulum](#kurulum)
+- [Hızlı başlangıç](#hızlı-başlangıç)
+- [Kitap projesi oluşturma](#kitap-projesi-oluşturma)
+- [CLI referansı](#cli-referansı)
+- [Üretim hattı](#üretim-hattı)
+- [LLM entegrasyonu](#llm-entegrasyonu)
+- [Sürüm geçmişi](#sürüm-geçmişi)
 
-## Minimum LLM başlangıç komutu
+---
 
-```text
-Aşağıdaki dosyalar Parametric Computer Book Factory v2.5.0 çerçevesine aittir.
-Önce `00_llm_execution_contract.md` dosyasını oku ve çalışma protokolünü öğren.
-Ardından `book_manifest.yaml` dosyasını tek doğruluk kaynağı kabul et.
-Manifesti doğrula. Eksik veya çelişkili alan varsa üretime geçmeden raporla.
-Manifest uygunsa kitap özel prompt paketini ve bölüm girdi promptlarını manifestteki dil politikasına göre üret.
-Tam bölüm metni üretme.
+## Proje nedir?
+
+**Parametric Computer Book Factory**, bilgisayar bilimleri, yazılım mühendisliği, veri bilimi, yapay zekâ, web/mobil programlama ve IoT gibi teknik alanlarda ders kitabı üretimini standartlaştırmak için geliştirilmiş bir framework'tür.
+
+LLM'e yalnızca "bir kitap yaz" demek yerine, üretim sürecini manifest, prompt standartları, kod doğrulama ve kalite kapılarıyla **izlenebilir ve tekrar üretilebilir** hale getirir.
+
+```
+Kitap fikri → Manifest → Promptlar → Bölüm taslakları → Tam metin
+     → Kod doğrulama → Markdown kalite kontrolü → Screenshot planı
+          → QR & GitHub sync → Post-production → DOCX / EPUB / PDF
 ```
 
-## Paket yapısı
+---
 
-```text
-core/
-  00_llm_execution_contract.md
-  01_book_manifest_schema.md
-  02_general_system_prompt.md
-  03_output_format_standard.md
-  04_chapter_structure_standard.md
-  05_chapter_input_generator_prompt.md
-  06_outline_review_prompt.md
-  07_full_text_generation_prompt.md
-  08_quality_gate_contract.md
-  09_manual_asset_override_policy.md
-  10_multilingual_generation_policy.md
-  11_approval_gate_policy.md
-  12_generated_package_protocol.md
-manifests/
-  java_fundamentals_manifest.yaml
-templates/
-  terminology_glossary_template.yaml
-  translation_memory_template.yaml
-examples/
-  chapter_input_example.md
-  meta_block_examples.md
+## Temel ilkeler
+
+> **`book_manifest.yaml` tek doğruluk kaynağıdır.**
+
+| İlke | Açıklama |
+|---|---|
+| Manifest önceliği | Tüm üretim kararları manifest'ten beslenir |
+| Belirsizlikte dur | Eksik bilgiyi tahmin etme, kullanıcıdan sor |
+| Kod çalışırlığı | Her kod bloğu `CODE_META` standardıyla test edilebilir |
+| Manuel varlık koruması | `assets/manual/` ve `assets/locked/` hiçbir araç tarafından silinmez |
+| İnsan onayı | Kritik aşamalar kullanıcı onayı olmadan geçilmez |
+| Dil tutarlılığı | Dosya adları/ID'ler İngilizce, içerik hedef dilde |
+
+---
+
+## Özellikler
+
+### Çekirdek
+- 📋 **Manifest tabanlı üretim** — `book_manifest.yaml` ile kitap yapısı, dil, kapsam ve onay kapıları yönetilir
+- 🤖 **LLM yürütme sözleşmesi** — LLM'in ne yapıp yapmaması gerektiği `core/` altında 20+ politika dosyasıyla tanımlanır
+- 📝 **Modüler LLM briefingi** — Büyük tek belge yerine senaryoya göre yüklenen 7 modüler dosya (`brief_*.md`)
+
+### Kod kalitesi
+- 🔍 **CODE_META standardı** — Her kod bloğu HTML yorum bloğuyla etiketlenir
+- ✅ **Otomatik test hattı** — `extract → validate → test` zinciri, Node.js/Python ile çalıştırılır
+- 📊 **Çift format rapor** — JSON + Markdown test raporları üretilir
+
+### İçerik kalitesi
+- 🏗️ **Markdown kalite kontrolü** — H1 sayısı, CODE_META yerleşimi, screenshot marker, kapsam sapması denetlenir
+- 📸 **Screenshot planı** — `[SCREENSHOT:id]` marker standardı ile programatik ekran çıktısı yönetimi
+- 📐 **Mermaid entegrasyonu** — Diyagramlar PNG'ye dönüştürülür, manuel override desteklenir
+
+### Çıktı & dağıtım
+- 📄 **DOCX** — Pandoc + Lua filter + referans şablon ile biçimlendirilmiş Word belgesi
+- 🌐 **HTML** — Tek sayfa veya bölüm bazlı statik site
+- 📱 **EPUB** — E-kitap formatı
+- 📦 **PDF** — Baskıya hazır çıktı
+- 🔗 **QR & GitHub sync** — Kod örnekleri QR koduyla ve GitHub Pages ile ilişkilendirilir
+
+### Geliştirici deneyimi
+- 💻 **GitHub Codespaces** — `.devcontainer/` ile tek tıkla hazır ortam
+- 🪟 **Windows/PowerShell 7** — UTF-8 ve path sorunlarına karşı sertleştirilmiş araçlar
+- 🏗️ **Scaffold aracı** — Yeni kitap projesi tek komutla oluşturulur
+- 📊 **Streamlit dashboard** — Proje durumu ve kalite metrikleri görselleştirmesi
+
+---
+
+## Proje yapısı
+
+```
+bookFactory/
+├── .devcontainer/             # GitHub Codespaces yapılandırması
+├── .github/
+│   ├── codespaces/
+│   └── workflows/             # CI/CD
+│
+├── core/                      # LLM politika ve prompt dosyaları (20+)
+│   ├── 00_llm_execution_contract.md
+│   ├── 01_book_manifest_schema.md
+│   ├── 02_general_system_prompt.md
+│   └── ...
+│
+├── bookfactory/               # Python paketi (CLI)
+│   └── cli.py
+│
+├── tools/                     # Yardımcı araçlar
+│   ├── scaffold_book_project.py   ← Yeni kitap projesi oluşturur
+│   ├── check_environment.py
+│   ├── check_package_integrity.py
+│   ├── validate_manifest.py
+│   ├── generate_chapter_inputs.py
+│   ├── code/                  # Kod doğrulama zinciri
+│   │   ├── extract_code_blocks.py
+│   │   ├── validate_code_meta.py
+│   │   └── run_code_tests.py
+│   ├── quality/
+│   │   └── check_chapter_markdown.py
+│   └── postproduction/        # Post-production hattı
+│       ├── post_production_pipeline.py
+│       ├── generate_qr_codes.py
+│       └── resolve_assets.py
+│
+├── manifests/                 # Örnek manifest dosyaları
+│   └── java_fundamentals_manifest.yaml
+│
+├── schemas/                   # JSON Schema dosyaları
+│   └── code_meta_schema.json
+│
+├── templates/                 # Terim sözlüğü ve çeviri belleği şablonları
+├── examples/                  # Örnek bölüm ve minimal kitap demosu
+├── configs/                   # Post-production profil şablonları
+├── docs/                      # Kullanıcı ve geliştirici belgeleri
+│
+# LLM Briefing Modülleri (kök dizin)
+├── LLM_PROJECT_BRIEF.md       # Index / router
+├── brief_core.md              # Proje özeti ve temel ilkeler
+├── brief_llm_rules.md         # LLM davranış kuralları
+├── brief_structure.md         # Klasör yapısı rehberi
+├── brief_standards.md         # CODE_META, screenshot, Mermaid standartları
+├── brief_react_context.md     # React kitabı bağlamı (örnek)
+├── brief_environment.md       # PowerShell/Codespaces ortam rehberi
+├── brief_loading_order.md     # Yükleme sırası ve iş akışı
+│
+├── README.md
+├── SETUP.md
+├── KULLANIM_KILAVUZU.md
+├── RELEASE_CHECKLIST.md
+├── CHANGELOG.md
+├── requirements.txt
+├── requirements-dev.txt
+└── pyproject.toml
 ```
 
-## Post-production katmanı
+> **Not:** Kitap içeriği (`workspace/`) bu repoda bulunmaz.  
+> Her kitap projesi kendi bağımsız reposunda yaşar. Bkz. [Kitap projesi oluşturma](#kitap-projesi-oluşturma).
 
-v2.1 ile framework’e yayın sonrası üretim hattı eklenmiştir. Bu katman, bölümler üretildikten sonra şu işlemleri yönetir:
+---
 
-1. Bölüm Markdown dosyalarını manifest/profil sırasına göre birleştirme
-2. Mermaid bloklarını `.mmd` dosyalarına çıkarma
-3. Mermaid PNG görsellerini tek aşamada üretme
-4. Pandoc ile reference DOCX ve Lua filter kullanarak DOCX oluşturma
-5. DOCX içinde resimleri ortalama, pedagogik kutuları iki yana yaslama ve tablo başlıklarını düzeltme
-6. DOCX tablo genişliklerini optimize etme
+## Gereksinimler
 
-Temel kullanım:
+| Araç | Minimum sürüm | Zorunlu |
+|---|---|---|
+| Python | 3.10+ | ✅ |
+| Node.js | 18+ | ✅ (kod testleri için) |
+| Pandoc | 3.x | ✅ (DOCX üretimi için) |
+| Mermaid CLI (`mmdc`) | 10+ | ⚡ (diyagram PNG üretimi için) |
+| PowerShell | 7.x | ⚡ (Windows'ta önerilir) |
+| Java | 17+ | ⚡ (bazı araçlar için) |
+| Git | 2.x | ✅ |
 
-```bash
-python tools/postproduction/post_production_pipeline.py   --profile configs/post_production_profile_java_fundamentals.yaml   --stage all
-```
+---
 
-Ayrıntılar için `core/13_post_production_pipeline_standard.md` ve `core/14_docx_build_and_formatting_policy.md` dosyalarına bakınız.
+## Kurulum
 
+```powershell
+# 1. Repoyu klonla
+git clone https://github.com/bmdersleri/bookFactory.git
+cd bookFactory
 
-## v2.3 Stabilization Notes
+# 2. Python bağımlılıklarını kur
+pip install -r requirements.txt
 
-Bu sürüm, v2.1 post-production paketinin stabilize edilmiş hâlidir.
-
-Eklenenler:
-
-- Proje başlatıcı prompt: `core/12_project_starter_prompt.md`
-- Paket üretim protokolü: `core/15_generated_package_protocol.md`
-- Manifest doğrulama: `tools/validate_manifest.py`
-- Bölüm girdi üretimi: `tools/generate_chapter_inputs.py`
-- Manuel görsel çözümleme: `tools/postproduction/resolve_assets.py`
-- Ortam kontrolü: `tools/check_environment.py`
-- Paket bütünlük kontrolü: `tools/check_package_integrity.py`
-- Quickstart ve LLM yükleme sırası belgeleri
-- Requirements ve release checklist dosyaları
-
-Önerilen ilk kontrol:
-
-```bash
-python tools/check_package_integrity.py .
+# 3. Ortamı doğrula
 python tools/check_environment.py --soft
+
+# 4. Paket bütünlüğünü kontrol et
+python tools/check_package_integrity.py .
 ```
 
+**Hızlı ortam kontrolü (CLI üzerinden):**
 
-## QR code generation
-
-Starting with v2.3.1, the post-production layer includes `tools/postproduction/generate_qr_codes.py` and the `generate-qr` pipeline stage. QR codes are generated from a YAML/JSON QR manifest and written as PNG files, typically under `assets/auto/qr`.
-
-Example:
-
-```bash
-python tools/postproduction/generate_qr_codes.py --manifest examples/qr/qr_manifest_example.yaml --output-dir assets/auto/qr --report build/reports/qr_generation_report.md
+```powershell
+python -m bookfactory doctor --soft
+python -m bookfactory test-minimal --fail-on-error
 ```
 
+---
 
-## v2.5.0 Correction Package
+## Hızlı başlangıç
 
-Bu düzeltme paketi, v2.4-improved sürümünün paket bütünlüğü korunan bakım sürümüdür. Başlıca düzeltmeler:
-
-- Minimal demo profilindeki `project_root` yolu düzeltildi.
-- Pandoc/Lua/Mermaid entegrasyonu `MERMAID_IMAGE_DIR` ortam değişkeniyle sağlamlaştırıldı.
-- Windows DOCX dönüşüm batch dosyası proje kökü temelli çalışacak şekilde güncellendi.
-- Java manifesti 33 ana bölüm + 3 ek bölüm iskeletini içerecek biçimde genişletildi.
-- Paket manifesti, checksum dosyası ve sürüm bilgileri v2.5.0 ile eşitlendi.
-
-
-## v2.4 Additions
-
-This package includes the following practical improvements:
-
-- `examples/assets/asset_manifest_example.yaml`: manual asset override example.
-- `examples/code/code_manifest_example.yaml`: code manifest example for QR generation.
-- `tools/postproduction/build_qr_manifest_from_code_manifest.py`: builds a QR manifest from a code manifest.
-- `tools/postproduction/update_chapter_order.py`: updates post-production profile chapter list by scanning a chapters directory.
-- `examples/numbering/numbering_test.md`: build-time numbering test document.
-- `examples/minimal_book/`: minimal demo book for end-to-end workflow testing.
-
-## v2.5.0 Code Validation + CLI Foundation
-
-v2.5.0 ile BookFactory, bağımsız post-production araçlarına ek olarak tek noktadan yönetilebilen bir CLI ve `CODE_META` tabanlı kod doğrulama hattı kazanmıştır.
-
-Yeni temel komutlar:
-
-```bash
+```powershell
+# Sürümü kontrol et
 python -m bookfactory version
+
+# Ortam tanısı
 python -m bookfactory doctor --soft
+
+# Minimal kitap demosu ile uçtan uca test
 python -m bookfactory test-minimal --fail-on-error
-python -m bookfactory test-code --chapters-dir examples/minimal_book/chapters --fail-on-error
-python -m bookfactory repair-prompts
+
+# Manifest doğrulama (kendi manifestiniz için)
+python tools/validate_manifest.py manifests/book_manifest.yaml
 ```
 
-Eklenen ana dosyalar:
+---
 
-- `bookfactory/cli.py`
-- `bookfactory_cli.py`
-- `tools/code/extract_code_blocks.py`
-- `tools/code/validate_code_meta.py`
-- `tools/code/run_code_tests.py`
-- `tools/code/generate_llm_repair_prompt.py`
-- `tools/code/run_code_tests_docker.py`
-- `core/16_code_validation_and_test_policy.md`
-- `docs/code_validation.md`
-- `docs/cli_usage.md`
-- `schemas/code_meta_schema.json`
+## Kitap projesi oluşturma
 
-Önerilen release öncesi kalite kapısı:
+Her kitap, BookFactory'den **bağımsız bir Git reposunda** yaşar. Yeni bir proje başlatmak için:
 
-```bash
-python -m bookfactory test-code --chapters-dir generated/java_fundamentals/tr/chapters --fail-on-error
+```powershell
+python tools/scaffold_book_project.py `
+  --name react-web `
+  --title "React ile Web Uygulama Geliştirme" `
+  --author "Prof. Dr. İsmail KIRBAŞ" `
+  --lang tr `
+  --output ".."
 ```
 
-## v2.6.0 — GitHub Sync ve QR Hardening
+Bu komut şu yapıyı oluşturur:
 
-v2.6.0 ile testten geçen `CODE_META` kodları GitHub'a hazır bir klasör yapısına aktarılabilir ve GitHub Pages açıklama sayfaları üretilebilir.
-
-Önerilen sıra:
-
-```bash
-python -m bookfactory test-code --chapters-dir examples/minimal_book/chapters --fail-on-error
-python -m bookfactory sync-github --code-manifest build/code_manifest.json --test-report build/test_reports/code_test_report.json --require-tests-passed
-python -m bookfactory qr-from-code --code-manifest build/code_manifest_github.json --fail-on-empty --strict-url
+```
+../react-web/
+├── .bookfactory           # Framework bağlantı dosyası
+├── README.md
+├── .gitignore
+├── chapters/              # Bölüm Markdown dosyaları
+├── chapter_inputs/        # LLM bölüm girdi promptları
+├── manifests/
+│   └── book_manifest.yaml
+├── configs/
+│   └── post_production_profile.yaml
+├── assets/
+│   ├── auto/   manual/   locked/   final/
+├── build/
+│   ├── code/
+│   └── test_reports/
+├── screenshots/
+└── dist/
 ```
 
-Gerçek `git push` varsayılan değildir; güvenlik için kullanıcı açıkça `--push` vermelidir.
+**Kitap reposunda kod doğrulama çalıştırma:**
 
-## v2.7.0 Export Pipeline
+```powershell
+# PYTHONPATH'i BookFactory'ye yönlendir
+$env:PYTHONPATH = "..\bookFactory"
 
-v2.7.0 ile BookFactory, DOCX/PDF üretimine ek olarak EPUB, tek sayfa HTML ve bölüm bazlı statik HTML site çıktıları üretebilir.
+# Kod bloklarını çıkar ve test et
+python -m tools.code.extract_code_blocks `
+  --package-root . `
+  --out-dir .\build\code `
+  --manifest .\build\code_manifest.json `
+  --chapters-dir .\chapters
 
-Temel komut:
-
-```bash
-python -m bookfactory export \
-  --profile examples/minimal_book/configs/post_production_profile_minimal.yaml \
-  --format all \
-  --merge-if-missing
+python -m tools.code.run_code_tests `
+  --manifest .\build\code_manifest.json `
+  --package-root . `
+  --report-json .\build\test_reports\code_test_report.json `
+  --report-md .\build\test_reports\code_test_report.md `
+  --node node --fail-on-error
 ```
 
-Ayrıntılar için `docs/export_pipeline.md` ve `core/18_export_pipeline_policy.md` dosyalarına bakınız.
+---
 
+## CLI referansı
 
-## v2.8.0 Glossary / Index / Dashboard
+```powershell
+python -m bookfactory version              # Framework sürümü
+python -m bookfactory doctor --soft        # Ortam tanısı
+python -m bookfactory test-minimal         # Minimal demo testi
+python -m bookfactory test-code `          # Bölüm kod testi
+  --chapters-dir <klasör> --fail-on-error
+python -m bookfactory repair-prompts       # LLM prompt onarımı
+python -m bookfactory sync-github `        # GitHub senkronizasyonu
+  --code-manifest <dosya> --push
+python -m bookfactory qr-from-code `       # QR kod üretimi
+  --code-manifest <dosya>
+python -m bookfactory export `             # Çıktı üretimi
+  --profile <profil> --format all
+python -m bookfactory build-index `        # Terim dizini
+  --profile <profil>
+python -m bookfactory dashboard --check    # Dashboard kontrolü
+python -m bookfactory codespaces-check     # Codespaces uyumluluk
+python -m bookfactory codespaces-init      # Codespaces başlatma
+```
 
-`python -m bookfactory build-index --profile examples/minimal_book/configs/post_production_profile_minimal.yaml` komutu ile terim sözlüğü ve arka dizin üretilebilir. `python -m bookfactory dashboard --check` komutu opsiyonel Streamlit dashboard bağımlılığını kontrol eder.
+---
 
-## GitHub Codespaces desteği
+## Üretim hattı
 
-BookFactory v2.9.0 ile proje GitHub Codespaces üzerinde doğrudan açılabilecek şekilde hazırlanmıştır. Varsayılan yapılandırma `.devcontainer/` klasöründedir.
+### CODE_META standardı
 
-**v2.9.1 hotfix:** Mermaid CLI için Puppeteer/Chrome kurulumu, project-level `configs/puppeteer_config.json` üretimi, `doctor --soft` sürüm kontrolü ve Codespaces template senkronizasyonu güçlendirilmiştir.
+Her çalıştırılabilir kod bloğundan önce HTML yorum bloğu zorunludur:
 
-```bash
-python -m bookfactory codespaces-check
-python -m bookfactory doctor --soft
+```markdown
+<!-- CODE_META
+id: ch02_code01
+chapter_id: chapter_02
+language: javascript
+kind: example
+title: "const ve let kullanımı"
+file: "const_let_example.js"
+extract: true
+test: run
+expected_output: "KampüsHub"
+github: true
+qr: dual
+-->
+
+```javascript
+const appName = "KampüsHub";
+console.log(appName);
+```
+```
+
+### Post-production
+
+```powershell
+python tools/postproduction/post_production_pipeline.py `
+  --profile configs/post_production_profile.yaml `
+  --stage all
+```
+
+Desteklenen aşamalar: `merge_chapters`, `extract_mermaid`, `render_mermaid`, `build_docx`, `build_html`, `build_epub`, `generate_qr`
+
+### Markdown kalite kontrolü
+
+```powershell
+python -m tools.quality.check_chapter_markdown `
+  --chapter .\chapters\chapter_01.md `
+  --chapter-id chapter_01 --chapter-no 1 `
+  --report .\build\test_reports\chapter_01_quality.md
+
+# Sadece hataları filtrele
+Select-String -Path .\build\test_reports\chapter_01_quality.md -Pattern "❌|FAIL"
+```
+
+---
+
+## LLM entegrasyonu
+
+### Modüler briefing sistemi
+
+Büyük tek belge yerine senaryoya göre yüklenen modüler yapı:
+
+| Dosya | Ne zaman yükle |
+|---|---|
+| `brief_core.md` | Her oturumda — ilk |
+| `brief_llm_rules.md` | Her oturumda — ikinci |
+| `brief_standards.md` | Bölüm üretiminde |
+| `brief_structure.md` | Klasör işlemlerinde |
+| `brief_environment.md` | Ortam sorunlarında |
+| `brief_loading_order.md` | Aşama planlarken |
+
+### Minimum başlangıç komutu
+
+```
+Aşağıdaki dosyalar Parametric Computer Book Factory v2.11.x çerçevesine aittir.
+
+Önce `brief_core.md`, ardından `brief_llm_rules.md` dosyasını oku.
+Kitap bağlamı için ilgili `brief_*context.md` dosyasını yükle.
+Bölüm üretimi yapacaksan `brief_standards.md` dosyasını da oku.
+
+Manifesti doğrula. Eksik alan varsa üretime geçmeden raporla.
+Eksik bilgiyi tahmin etme — kullanıcıdan sor.
+```
+
+---
+
+## Sürüm geçmişi
+
+| Sürüm | Öne çıkan özellikler |
+|---|---|
+| **v2.11.x** | Modüler LLM briefing sistemi, workspace/framework ayrıştırması |
+| **v2.9.x** | GitHub Codespaces desteği, `codespaces-init` CLI komutu |
+| **v2.8.0** | Glossary/Index, Streamlit dashboard |
+| **v2.7.0** | EPUB, tek sayfa HTML ve statik site export pipeline |
+| **v2.6.0** | GitHub sync ve QR hardening |
+| **v2.5.0** | CODE_META kod doğrulama hattı, CLI foundation |
+| **v2.4.0** | Asset manifest örnekleri, chapter order güncelleme aracı |
+| **v2.3.x** | Manifest doğrulama, paket bütünlük kontrolü, quickstart |
+| **v2.1.0** | Post-production hattı (Mermaid, DOCX, Lua filter) |
+
+---
+
+## Katkı
+
+Katkı sürecine başlamadan önce `CONTRIBUTING.md` dosyasını okuyun.
+
+```powershell
+# Geliştirme bağımlılıklarını kur
+pip install -r requirements-dev.txt
+
+# Testleri çalıştır
 python -m bookfactory test-minimal --fail-on-error
 ```
 
-Yeni veya harici bir BookFactory projesine Codespaces dosyalarını eklemek için:
+---
 
-```bash
-python -m bookfactory codespaces-init
-```
+## Lisans
 
-Ayrıntılar için `docs/codespaces_integration.md` dosyasına bakınız.
+MIT Lisansı — ayrıntılar için `LICENSE` dosyasına bakın.
+
+---
+
+**Yazar:** Prof. Dr. İsmail KIRBAŞ  
+**Repo:** [github.com/bmdersleri/bookFactory](https://github.com/bmdersleri/bookFactory)  
+**Bağlı kitap projesi:** [github.com/bmdersleri/react-web](https://github.com/bmdersleri/react-web)
