@@ -176,3 +176,8 @@ desktop.ini
 # Local Git backups
 .git_backup*/
 .git_disabled*/
+
+# Chapter backup files
+workspace/**/chapters/*_before_quality_fix_*.md
+workspace/**/chapters/*backup*.md
+workspace/**/chapters/*_backup*.md
