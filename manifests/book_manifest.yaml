@@ -1,0 +1,126 @@
+# KampüsHub Kitap Manifesti
+# Tek doğruluk kaynağı — tüm üretim bu dosyadan yönetilir.
+
+book:
+  title: "React ile Web Uygulama Geliştirme"
+  subtitle: "KampüsHub Projesiyle Adım Adım React"
+  author: "Prof. Dr. İsmail KIRBAŞ"
+  edition: "1"
+  year: "2026"
+  framework_version: "v2.11.x"
+
+language:
+  primary_language: "tr"
+  output_languages:
+    - "tr"
+  file_naming_language: "en"
+  manifest_language: "en"
+  automation_language: "en"
+
+cumulative_app:
+  name: "KampüsHub"
+  description: "Üniversite öğrencileri için öğretim amaçlı React web uygulaması"
+
+scope:
+  stack:
+    - "React 19"
+    - "Vite"
+    - "React Router v7 Declarative Mode"
+    - "TanStack Query"
+    - "Redux Toolkit"
+    - "Zustand"
+    - "React Hook Form"
+    - "Vitest + React Testing Library + user-event"
+    - "MSW"
+  out_of_scope:
+    - "Next.js / SSR / SSG"
+    - "React Native"
+    - "GraphQL / Apollo"
+    - "Backend / ORM"
+
+structure:
+  chapters:
+    - id: chapter_01
+      title: "Modern Web'e Giriş"
+      file: "chapter_01_modern_web_giris.md"
+      status: "done"
+    - id: chapter_02
+      title: "React için Modern JavaScript Temelleri"
+      file: "chapter_02_javascript_temelleri.md"
+      status: "in_progress"
+    - id: chapter_03
+      title: "HTML/CSS'ten Bileşen Düşüncesine"
+      file: "chapter_03_html_css_bilesen_dusuncesi.md"
+      status: "planned"
+    - id: chapter_04
+      title: "JSX ve Render Mantığı"
+      file: "chapter_04_jsx_render.md"
+      status: "planned"
+    - id: chapter_05
+      title: "Props ve Bileşen Kompozisyonu"
+      file: "chapter_05_props_kompozisyon.md"
+      status: "planned"
+    - id: chapter_06
+      title: "State ve Event Yönetimi"
+      file: "chapter_06_state_event.md"
+      status: "planned"
+    - id: chapter_07
+      title: "useEffect, Yan Etkiler ve API'ye Hazırlık"
+      file: "chapter_07_useeffect_api.md"
+      status: "planned"
+    - id: chapter_08
+      title: "Hook Kuralları ve Memoization"
+      file: "chapter_08_hook_memoization.md"
+      status: "planned"
+    - id: chapter_09
+      title: "Custom Hook Tasarımı"
+      file: "chapter_09_custom_hooks.md"
+      status: "planned"
+    - id: chapter_10
+      title: "React Router v7"
+      file: "chapter_10_router.md"
+      status: "planned"
+    - id: chapter_11
+      title: "Formlar, Validation ve Erişilebilirlik"
+      file: "chapter_11_forms.md"
+      status: "planned"
+    - id: chapter_12
+      title: "Redux Toolkit"
+      file: "chapter_12_redux.md"
+      status: "planned"
+    - id: chapter_13
+      title: "REST API, TanStack Query ve MSW"
+      file: "chapter_13_api_tanstack.md"
+      status: "planned"
+    - id: chapter_14
+      title: "Zustand ve Alternatif State Yönetimi"
+      file: "chapter_14_zustand.md"
+      status: "planned"
+    - id: chapter_15
+      title: "Performans, Test ve Dağıtım"
+      file: "chapter_15_perf_test_deploy.md"
+      status: "planned"
+    - id: chapter_16
+      title: "KampüsHub Final Entegrasyonu"
+      file: "chapter_16_final.md"
+      status: "planned"
+
+approval_gates:
+  manifest_validation: "required"
+  chapter_input_generation: "optional"
+  outline_review: "required"
+  full_text_generation: "required"
+  code_validation: "required"
+  markdown_quality_check: "required"
+  post_production_build: "optional"
+
+code:
+  extract: true
+  test: true
+  github_sync: false
+  qr_generation: false
+
+assets:
+  screenshot_automation: false
+  mermaid_generation: true
+  manual_override: true
