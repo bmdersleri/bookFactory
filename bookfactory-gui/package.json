@@ -1,0 +1,62 @@
+{
+  "name": "bookfactory-gui",
+  "displayName": "BookFactory GUI",
+  "description": "Parametric Computer Book Factory görsel arayüzü",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bookfactory.openPanel",
+        "title": "BookFactory: Paneli Aç",
+        "icon": "$(book)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "bookfactory.openPanel",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "BookFactory",
+      "properties": {
+        "bookfactory.frameworkPath": {
+          "type": "string",
+          "default": "",
+          "description": "BookFactory framework repo klasörü (bookfactory/ içeren dizin)"
+        },
+        "bookfactory.bookProjectPath": {
+          "type": "string",
+          "default": "",
+          "description": "Kitap projesi klasörü (.bookfactory dosyasının bulunduğu dizin)"
+        },
+        "bookfactory.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python yorumlayıcı yolu (varsayılan: python)"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "bookfactory.openPanel",
+        "key": "ctrl+shift+b",
+        "mac": "cmd+shift+b"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "eslint": "^8.56.0"
+  }
+}
