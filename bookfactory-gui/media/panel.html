@@ -95,7 +95,7 @@ tr:hover td{background:var(--vscode-list-hoverBackground)}
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
         <button onclick="runTerminal('Ortam Kontrolü', py()+' -m bookfactory doctor --soft')">Ortam kontrolü</button>
         <button class="sec" onclick="runTerminal('Manifest Doğrulama', buildValidateCmd())">Manifest doğrula</button>
-        <button class="sec" onclick="runTerminal('Paket Bütünlük', py()+'  "'+fw()+'\\tools\\check_package_integrity.py" .')">Paket bütünlüğü</button>
+        <button class="sec" onclick="runTerminal('Paket bütünlüğü', buildIntegrityCmd())">Paket bütünlüğü</button>
       </div>
     </div>
   </div>
@@ -436,6 +436,9 @@ function buildQualityCmd() {
   var id  = ch.replace(/.*chapter_(\d+).*/,'chapter_$1');
   var no  = String(parseInt(ch.replace(/.*chapter_(\d+).*/,'$1'), 10));
   return py() + ' -m tools.quality.check_chapter_markdown --chapter ./chapters/' + ch + ' --chapter-id ' + id + ' --chapter-no ' + no + ' --report ./build/test_reports/' + id + '_quality_report.md';
+}
+function buildIntegrityCmd() {
+  return py() + ' "' + fw() + '\\tools\\check_package_integrity.py" .';
 }
 function buildValidateCmd() {
   return py() + ' -c "import json,yaml,jsonschema; schema=json.load(open(\'' + fw().replace(/\\/g,'\\\\') + '/schemas/book_manifest_schema.json\',encoding=\'utf-8\')); manifest=yaml.safe_load(open(\'manifests/book_manifest.yaml\',encoding=\'utf-8\')); jsonschema.validate(manifest,schema); print(\'Manifest gecerli.\')"';

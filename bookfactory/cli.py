@@ -55,12 +55,71 @@ elif args.command == "init":
 # ─────────────────────────────────────────────────────────────────────────────
 
 import argparse
+import importlib.util
 import sys
+from pathlib import Path
 
 from bookfactory.commands.init import run as run_init
 
 
+def _dispatch_sync_github() -> None:
+    """Called before argparse when sys.argv[1] == 'sync-github'."""
+    _bf_root = Path(__file__).resolve().parent.parent
+    if str(_bf_root) not in sys.path:
+        sys.path.insert(0, str(_bf_root))
+    _script = _bf_root / "tools/github/sync_code_repository.py"
+    _spec = importlib.util.spec_from_file_location("sync_code_repository", _script)
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    raise SystemExit(_mod.main(sys.argv[2:]))
+
+
+def _dispatch_export() -> None:
+    """Called before argparse when sys.argv[1] == 'export'."""
+    _bf_root = Path(__file__).resolve().parent.parent
+    if str(_bf_root) not in sys.path:
+        sys.path.insert(0, str(_bf_root))
+    _script = _bf_root / "tools/export/export_book.py"
+    _spec = importlib.util.spec_from_file_location("export_book", _script)
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    raise SystemExit(_mod.main(sys.argv[2:]))
+
+
+def _dispatch_qr_from_code() -> None:
+    """Called before argparse when sys.argv[1] == 'qr-from-code'."""
+    _bf_root = Path(__file__).resolve().parent.parent
+    if str(_bf_root) not in sys.path:
+        sys.path.insert(0, str(_bf_root))
+    _script = _bf_root / "tools/postproduction/build_qr_manifest_from_code_manifest.py"
+    _spec = importlib.util.spec_from_file_location("build_qr_manifest_from_code_manifest", _script)
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    _argv = list(sys.argv[2:])
+    if "--output" not in _argv:
+        _argv += ["--output", "build/qr_manifest.yaml"]
+    raise SystemExit(_mod.main(_argv))
+
+
 def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "sync-github":
+        _dispatch_sync_github()
+    if len(sys.argv) >= 2 and sys.argv[1] == "qr-from-code":
+        _dispatch_qr_from_code()
+    if len(sys.argv) >= 2 and sys.argv[1] == "export":
+        _dispatch_export()
+    if len(sys.argv) >= 2 and sys.argv[1] == "build-index":
+        _bf_root = Path(__file__).resolve().parent.parent
+        if str(_bf_root) not in sys.path:
+            sys.path.insert(0, str(_bf_root))
+        _spec = importlib.util.spec_from_file_location(
+            "build_glossary_index",
+            _bf_root / "tools/indexing/build_glossary_index.py"
+        )
+        _mod = importlib.util.module_from_spec(_spec)
+        _spec.loader.exec_module(_mod)
+        raise SystemExit(_mod.main(sys.argv[2:]))
+
     parser = argparse.ArgumentParser(
         prog="bookfactory",
         description="Parametric Computer Book Factory CLI",
@@ -88,11 +147,7 @@ def main():
     subparsers.add_parser("repair-prompts", help="LLM prompt onarımı")
 
     # ── sync-github ───────────────────────────────────────────────────────
-    sg_p = subparsers.add_parser("sync-github", help="GitHub senkronizasyonu")
-    sg_p.add_argument("--code-manifest", required=True)
-    sg_p.add_argument("--test-report")
-    sg_p.add_argument("--require-tests-passed", action="store_true")
-    sg_p.add_argument("--push", action="store_true")
+    subparsers.add_parser("sync-github", help="GitHub senkronizasyonu")
 
     # ── qr-from-code ──────────────────────────────────────────────────────
     qr_p = subparsers.add_parser("qr-from-code", help="QR kod üretimi")
@@ -154,7 +209,7 @@ def main():
         )
 
     elif args.command in ("doctor", "test-minimal", "test-code",
-                          "repair-prompts", "sync-github", "qr-from-code",
+                          "repair-prompts", "qr-from-code",
                           "export", "build-index", "dashboard",
                           "codespaces-check", "codespaces-init"):
         # Mevcut komutlar — orijinal implementasyona devredilir

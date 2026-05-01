@@ -87,7 +87,18 @@ def md_index(items):
         lines.append(f"- **{it['term']}** — {rs}")
     return '\n'.join(lines)+'\n'
 def review(g,idx): return '# Glossary and Index Review Prompt\n\nTerim sözlüğü ve arka dizin deterministik olarak üretildi. Teknik editör olarak tekrar eden terimleri, eksik tanımları ve referansların yeterliliğini değerlendir.\n\n- Terim sayısı: '+str(len(g))+'\n- Dizin girdisi sayısı: '+str(len(idx))+'\n'
-def build(profile_path:Path, output_dir:Path|None, fail_on_empty:bool)->int:
+_GLOSS_MARKER = '<!-- BOOKFACTORY_GLOSSARY_START -->'
+
+def append_glossary_to_merged(merged_md: Path, glossary_text: str) -> None:
+    text = merged_md.read_text(encoding='utf-8') if merged_md.exists() else ''
+    # Önceki glossary varsa kaldır
+    if _GLOSS_MARKER in text:
+        text = text[:text.index(_GLOSS_MARKER)].rstrip()
+    appendix = f'\n\n\\newpage\n\n{_GLOSS_MARKER}\n\n{glossary_text.strip()}\n'
+    merged_md.write_text(text + appendix, encoding='utf-8')
+    print(f'[OK] Terim sözlüğü merged markdown\'a eklendi: {merged_md}')
+
+def build(profile_path:Path, output_dir:Path|None, fail_on_empty:bool, append_to_merged:bool=False)->int:
     profile=load_yaml(profile_path); base=base_for(profile_path,profile); out=output_dir or Path(str((profile.get('indexing') or {}).get('output_dir') or 'build/index')); out=out if out.is_absolute() else (base/out).resolve()
     chapters=entries(profile,base); raw=[]; existing=[]; warnings=[]
     for ch in chapters:
@@ -104,11 +115,20 @@ def build(profile_path:Path, output_dir:Path|None, fail_on_empty:bool)->int:
     gp={'schema_version':'2.8.0','terms':g}; ip={'schema_version':'2.8.0','terms':idx}
     (out/'glossary.json').write_text(json.dumps(gp,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); (out/'book_index.json').write_text(json.dumps(ip,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     (out/'glossary.yaml').write_text(json.dumps(gp,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); (out/'book_index.yaml').write_text(json.dumps(ip,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    (out/'glossary.md').write_text(md_gloss(g),encoding='utf-8'); (out/'book_index.md').write_text(md_index(idx),encoding='utf-8'); (out/'glossary_index_review_prompt.md').write_text(review(g,idx),encoding='utf-8')
+    gloss_text=md_gloss(g)
+    (out/'glossary.md').write_text(gloss_text,encoding='utf-8'); (out/'book_index.md').write_text(md_index(idx),encoding='utf-8'); (out/'glossary_index_review_prompt.md').write_text(review(g,idx),encoding='utf-8')
     rep={'schema_version':'2.8.0','generated_at':datetime.now(UTC).isoformat(timespec='seconds').replace('+00:00','Z'),'chapters_scanned':len(existing),'raw_glossary_entries':len(raw),'unique_glossary_terms':len(g),'index_terms':len(idx),'warnings':warnings}
     (out/'indexing_report.json').write_text(json.dumps(rep,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     text=f"# Glossary / Index Build Report\n\n- Generated at: `{rep['generated_at']}`\n- Chapters scanned: `{rep['chapters_scanned']}`\n- Raw glossary entries: `{rep['raw_glossary_entries']}`\n- Unique glossary terms: `{rep['unique_glossary_terms']}`\n- Index terms: `{rep['index_terms']}`\n"
-    (out/'indexing_report.md').write_text(text,encoding='utf-8'); print(text); return 0
+    (out/'indexing_report.md').write_text(text,encoding='utf-8'); print(text)
+    if append_to_merged:
+        pp=profile.get('post_production',{}); bld=pp.get('build',{})
+        md_rel=bld.get('merged_markdown') or 'build/merged/book_merged.md'
+        cwd_base=Path.cwd().resolve()
+        merged_md=Path(md_rel) if Path(md_rel).is_absolute() else (cwd_base/md_rel).resolve()
+        if merged_md.exists(): append_glossary_to_merged(merged_md, gloss_text)
+        else: print(f'[WARN] Merged markdown bulunamadı, atlandı: {merged_md}', file=sys.stderr)
+    return 0
 def main(argv=None):
-    p=argparse.ArgumentParser(); p.add_argument('--profile',type=Path,required=True); p.add_argument('--output-dir',type=Path); p.add_argument('--fail-on-empty',action='store_true'); a=p.parse_args(argv); return build(a.profile.resolve(),a.output_dir,a.fail_on_empty)
+    p=argparse.ArgumentParser(); p.add_argument('--profile',type=Path,required=True); p.add_argument('--output-dir',type=Path); p.add_argument('--fail-on-empty',action='store_true'); p.add_argument('--append-to-merged',action='store_true',help='Terim sözlüğünü merged markdown dosyasına ekle'); a=p.parse_args(argv); return build(a.profile.resolve(),a.output_dir,a.fail_on_empty,a.append_to_merged)
 if __name__=='__main__': raise SystemExit(main())

@@ -38,7 +38,7 @@ def path_for_env(path: Path | None) -> str:
 
 
 def run(cmd: list[str], cwd: Path | None = None, env: dict | None = None, dry_run: bool = False) -> int:
-    print("$ " + " ".join(str(c) for c in cmd))
+    print("$ " + " ".join(str(c) for c in cmd), flush=True)
     if dry_run:
         return 0
     merged_env = os.environ.copy()
@@ -98,6 +98,7 @@ def main(argv=None) -> int:
         "render-mermaid",
         "generate-qr",
         "resolve-assets",
+        "inject-qr",
         "pandoc",
         "fix-docx",
         "optimize-tables",
@@ -131,6 +132,7 @@ def main(argv=None) -> int:
         "render-mermaid",
         "generate-qr",
         "resolve-assets",
+        "inject-qr",
         "pandoc",
         "fix-docx",
         "optimize-tables",
@@ -146,7 +148,7 @@ def main(argv=None) -> int:
     ]
 
     for stage in stages:
-        print(f"\n=== {stage} ===")
+        print(f"\n=== {stage} ===", flush=True)
 
         if stage == "validate":
             errors = validate(profile, base)
@@ -256,17 +258,50 @@ def main(argv=None) -> int:
             if not asset_cfg.get("manual_override", True):
                 print("Asset resolving skipped; manual_override is disabled.")
                 continue
+            auto_dir   = resolve(base, asset_cfg.get("auto_dir",   "assets/auto"))
+            manual_dir = resolve(base, asset_cfg.get("manual_dir", "assets/manual"))
+            locked_dir = resolve(base, asset_cfg.get("locked_dir", "assets/locked"))
+            final_dir  = resolve(base, asset_cfg.get("final_dir",  "assets/final"))
             cmd = [
                 sys.executable,
                 str(tools / "resolve_assets.py"),
-                "--profile",
-                str(profile_path),
+                "--auto-dir",   str(auto_dir),
+                "--manual-dir", str(manual_dir),
+                "--locked-dir", str(locked_dir),
+                "--final-dir",  str(final_dir),
                 "--clean-final",
             ]
             rc = run(cmd, cwd=base, dry_run=args.dry_run)
             if rc:
                 return rc
             report_lines.append("- resolve-assets: PASS")
+
+        elif stage == "inject-qr":
+            if not qr_cfg.get("enabled", False):
+                print("QR injection skipped; qr.enabled is false or missing.")
+                report_lines.append("- inject-qr: SKIPPED")
+                continue
+            qr_manifest = resolve(base, qr_cfg.get("manifest"))
+            if not qr_manifest or not qr_manifest.exists():
+                print(f"QR manifest not found, skipping inject-qr: {qr_manifest}")
+                report_lines.append("- inject-qr: SKIPPED missing manifest")
+                continue
+            assert merged_md is not None
+            final_dir = resolve(base, asset_cfg.get("final_dir", "assets/final"))
+            qr_final_dir = final_dir / "qr"
+            cmd = [
+                sys.executable,
+                str(tools / "inject_qr_references.py"),
+                "--merged-md",   str(merged_md),
+                "--qr-manifest", str(qr_manifest),
+                "--base-dir",    str(base),
+                "--qr-final-dir", str(qr_final_dir),
+                "--output",      str(merged_md),
+            ]
+            rc = run(cmd, cwd=base, dry_run=args.dry_run)
+            if rc:
+                return rc
+            report_lines.append(f"- inject-qr: `{merged_md}`")
 
         elif stage == "pandoc":
             assert merged_md is not None and output_docx is not None

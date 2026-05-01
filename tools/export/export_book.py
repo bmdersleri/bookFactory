@@ -49,8 +49,8 @@ def profile_base(profile_path: Path, profile: dict[str, Any]) -> Path:
     project_root = profile.get("project_root") or profile.get("post_production", {}).get("project_root")
     if project_root:
         p = Path(project_root)
-        return p.resolve() if p.is_absolute() else (profile_path.parent / p).resolve()
-    return repo_root()
+        return p.resolve() if p.is_absolute() else (Path.cwd() / p).resolve()
+    return Path.cwd()
 
 
 def resolve(base: Path, value: str | None) -> Path | None:
@@ -163,16 +163,20 @@ def pandoc_available() -> bool:
     return shutil.which("pandoc") is not None
 
 
-def run_pandoc(cmd: list[str], cwd: Path, dry_run: bool) -> int:
+def run_pandoc(cmd: list[str], cwd: Path, dry_run: bool, extra_env: dict[str, str] | None = None) -> int:
     print("$ " + " ".join(str(x) for x in cmd), flush=True)
     if dry_run:
         return 0
     timeout = int(os.environ.get("BOOKFACTORY_PANDOC_TIMEOUT_SEC", "120"))
+    merged_env = os.environ.copy()
+    if extra_env:
+        merged_env.update(extra_env)
     popen_kwargs: dict[str, Any] = {
         "cwd": str(cwd),
         "stdout": subprocess.PIPE,
         "stderr": subprocess.PIPE,
         "text": True,
+        "env": merged_env,
     }
     if os.name == "nt":
         popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
@@ -245,6 +249,115 @@ def export_epub(merged_md: Path, output: Path, profile: dict[str, Any], base: Pa
         cmd.append(f"--epub-cover-image={cover}")
     rc = run_pandoc(cmd, cwd=merged_md.parent if merged_md.parent.exists() else base, dry_run=dry_run)
     return {"format": "epub", "output": str(output), "status": "OK" if rc == 0 else "ERROR", "returncode": rc}
+
+
+def _run_tool(script: Path, args: list[str], cwd: Path, dry_run: bool) -> int:
+    cmd = [sys.executable, str(script), *args]
+    print("$ " + " ".join(str(x) for x in cmd), flush=True)
+    if dry_run:
+        return 0
+    return subprocess.run(cmd, cwd=str(cwd)).returncode
+
+
+def postprocess_docx(output: Path, profile: dict[str, Any], base: Path, dry_run: bool) -> list[str]:
+    """Run fix-docx and optimize-tables on the produced DOCX. Returns warning messages."""
+    tools_dir = repo_root() / "tools" / "postproduction"
+    pp = profile.get("post_production", {})
+    docx_cfg = pp.get("docx_postprocess", {})
+    warnings: list[str] = []
+
+    if docx_cfg.get("enabled", True) is False:
+        print("[DOCX-POST] Devre dışı (docx_postprocess.enabled: false)", flush=True)
+        return warnings
+
+    # fix-docx
+    fix_tool = docx_cfg.get("format_fix_tool", "fix_docx_format_ooxml.py")
+    fix_args = [str(output), "--in-place"]
+    if not docx_cfg.get("fix_table_headers", True):
+        fix_args.append("--no-table-header-fix")
+    rc = _run_tool(tools_dir / fix_tool, fix_args, base, dry_run)
+    if rc:
+        warnings.append(f"fix-docx returned {rc}")
+
+    # optimize-tables
+    if docx_cfg.get("optimize_tables", True):
+        opt_args = [str(output), "--in-place", "--mode", docx_cfg.get("table_mode", "proportional")]
+        rc = _run_tool(tools_dir / "optimize_docx_tables.py", opt_args, base, dry_run)
+        if rc:
+            warnings.append(f"optimize-tables returned {rc}")
+
+    return warnings
+
+
+def export_docx(merged_md: Path, output: Path, profile: dict[str, Any], base: Path, dry_run: bool) -> dict[str, Any]:
+    print(f"[EXPORT] DOCX -> {output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    pp = profile.get("post_production", {})
+    pandoc_cfg = pp.get("pandoc", {})
+    mermaid_cfg = pp.get("mermaid", {})
+    exports_cfg = pp.get("exports", {}) or profile.get("exports", {}) or {}
+    docx_cfg = exports_cfg.get("docx", {})
+
+    reference_docx = resolve(base, docx_cfg.get("reference_docx") or pandoc_cfg.get("reference_docx"))
+    lua_filter = resolve(base, docx_cfg.get("lua_filter") or pandoc_cfg.get("lua_filter"))
+    mermaid_dir = resolve(base, mermaid_cfg.get("output_dir") or "assets/auto/diagrams")
+
+    cmd = ["pandoc", *pandoc_common_args(profile, base), str(merged_md), "-o", str(output)]
+    if reference_docx and reference_docx.exists():
+        cmd.append(f"--reference-doc={reference_docx}")
+    if lua_filter and lua_filter.exists():
+        cmd.append(f"--lua-filter={lua_filter}")
+
+    extra_env: dict[str, str] = {}
+    if mermaid_dir and mermaid_dir.exists():
+        extra_env["MERMAID_IMAGE_WIDTH"] = str(mermaid_cfg.get("docx_width", "4.90in"))
+        extra_env["MERMAID_IMAGE_DIR"] = mermaid_dir.as_posix()
+
+    rc = run_pandoc(cmd, cwd=merged_md.parent if merged_md.parent.exists() else base, dry_run=dry_run, extra_env=extra_env)
+    if rc:
+        return {"format": "docx", "output": str(output), "status": "ERROR", "returncode": rc}
+
+    print("[DOCX-POST] fix-docx + optimize-tables başlıyor...", flush=True)
+    warnings = postprocess_docx(output, profile, base, dry_run)
+    status = "OK" if not warnings else "WARN"
+    result: dict[str, Any] = {"format": "docx", "output": str(output), "status": status, "returncode": 0}
+    if warnings:
+        result["warnings"] = warnings
+    return result
+
+
+def _detect_pdf_engine() -> str:
+    for engine in ("xelatex", "lualatex", "pdflatex", "wkhtmltopdf", "weasyprint"):
+        if shutil.which(engine):
+            return engine
+    return "xelatex"
+
+
+def export_pdf(merged_md: Path, output: Path, profile: dict[str, Any], base: Path, dry_run: bool) -> dict[str, Any]:
+    print(f"[EXPORT] PDF -> {output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    pp = profile.get("post_production", {})
+    exports_cfg = pp.get("exports", {}) or profile.get("exports", {}) or {}
+    pdf_cfg = exports_cfg.get("pdf", {})
+
+    engine = pdf_cfg.get("engine") or _detect_pdf_engine()
+    if not shutil.which(engine):
+        return {"format": "pdf", "output": str(output), "status": "ERROR",
+                "note": f"PDF engine not found: {engine}. Install xelatex (MiKTeX/TeX Live) or wkhtmltopdf."}
+
+    cmd = ["pandoc", *pandoc_common_args(profile, base), str(merged_md), "-o", str(output),
+           f"--pdf-engine={engine}",
+           "-M", "numbersections=false"]
+
+    lua_filter = resolve(base, pdf_cfg.get("lua_filter") or pp.get("pandoc", {}).get("lua_filter"))
+    if lua_filter and lua_filter.exists():
+        cmd.append(f"--lua-filter={lua_filter}")
+
+    for k, v in (pdf_cfg.get("variables") or {}).items():
+        cmd.extend(["-V", f"{k}={v}"])
+
+    rc = run_pandoc(cmd, cwd=merged_md.parent if merged_md.parent.exists() else base, dry_run=dry_run)
+    return {"format": "pdf", "output": str(output), "status": "OK" if rc == 0 else "ERROR", "returncode": rc}
 
 
 def fallback_markdown_to_html(text: str) -> str:
@@ -393,7 +506,7 @@ def write_report(results: list[dict[str, Any]], report_json: Path, report_md: Pa
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Export BookFactory content to EPUB, HTML and split website outputs.")
     ap.add_argument("--profile", required=True, help="Post-production profile YAML")
-    ap.add_argument("--format", dest="formats", action="append", choices=["all", "markdown", "html", "epub", "site"], default=[])
+    ap.add_argument("--format", dest="formats", action="append", choices=["all", "markdown", "html", "epub", "docx", "pdf", "site"], default=[])
     ap.add_argument("--merged-md", help="Merged Markdown path. Defaults to post_production.build.merged_markdown")
     ap.add_argument("--output-dir", help="Export output directory. Defaults to profile exports.output_dir or dist")
     ap.add_argument("--merge-if-missing", action="store_true", help="Run merge_chapters.py if merged Markdown is missing")
@@ -418,7 +531,7 @@ def main(argv: list[str] | None = None) -> int:
 
     requested = args.formats or exports_cfg.get("formats") or ["html"]
     if "all" in requested:
-        requested = ["markdown", "html", "epub", "site"]
+        requested = ["markdown", "html", "epub", "docx", "pdf", "site"]
 
     if args.merge_if_missing:
         rc = ensure_merged_markdown(profile_path, profile, base, merged_md, args.dry_run)
@@ -430,7 +543,7 @@ def main(argv: list[str] | None = None) -> int:
         print("Hint: run post-production merge first or pass --merge-if-missing.", file=sys.stderr)
         return 1
 
-    pandoc_needed = any(fmt in {"epub"} for fmt in requested)
+    pandoc_needed = any(fmt in {"epub", "docx", "pdf"} for fmt in requested)
     if pandoc_needed and not pandoc_available():
         message = "Pandoc is required for single HTML/EPUB export."
         if args.require_pandoc:
@@ -456,6 +569,14 @@ def main(argv: list[str] | None = None) -> int:
             output = resolve(base, exports_cfg.get("epub", {}).get("output") or str(output_dir / "book.epub"))
             assert output is not None
             results.append(export_epub(merged_md, output, profile, base, css_epub, cover, args.dry_run))
+        elif fmt == "docx":
+            output = resolve(base, exports_cfg.get("docx", {}).get("output") or str(output_dir / "book.docx"))
+            assert output is not None
+            results.append(export_docx(merged_md, output, profile, base, args.dry_run))
+        elif fmt == "pdf":
+            output = resolve(base, exports_cfg.get("pdf", {}).get("output") or str(output_dir / "book.pdf"))
+            assert output is not None
+            results.append(export_pdf(merged_md, output, profile, base, args.dry_run))
         elif fmt == "site":
             site_dir = resolve(base, exports_cfg.get("site", {}).get("output_dir") or str(output_dir / "site"))
             assert site_dir is not None
