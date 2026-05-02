@@ -1,0 +1,25 @@
+{
+  "name": "React ile Web Uygulama Geliştirme - BookFactory Studio",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "marp-team.marp-vscode",
+        "shane.pandoc",
+        "ritwickdey.liveserver"
+      ]
+    }
+  },
+  "postCreateCommand": "pip install -r requirements.txt && pip install bookfactory-studio",
+  "forwardPorts": [8000, 8766],
+  "portsAttributes": {
+    "8766": {
+      "label": "BookFactory Studio",
+      "onAutoForward": "openPreview"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+name: Deploy Book to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - v3.2-stabilization-cli
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install mkdocs-material pymdown-extensions
+          pip install .
+          
+      - name: Generate Web Site
+        run: |
+          # Point to the github-kitabi manifest
+          bookfactory-studio --step generate-web-site --root examples/github-kitabi
+          
+      - name: Build with MkDocs
+        run: |
+          cd examples/github-kitabi/dist/web_site
+          mkdocs build
+          
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: examples/github-kitabi/dist/web_site/site
+          
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
