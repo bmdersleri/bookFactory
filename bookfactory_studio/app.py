@@ -17,6 +17,8 @@ from .core import (
     import_chapter_markdown,
     initialize_project,
     load_yaml,
+    match_chapter_files,
+    normalize_manifest,
     parse_yaml_text,
     pipeline_steps,
     project_root,
@@ -33,6 +35,7 @@ from .jobs import create_job, get_job, read_job_log
 class ManifestRequest(BaseModel):
     root: str = "."
     manifest: dict[str, Any]
+    force: bool = False
 
 
 class WizardPromptRequest(BaseModel):
@@ -44,6 +47,7 @@ class WizardPromptRequest(BaseModel):
 class ManifestYamlRequest(BaseModel):
     root: str = "."
     yaml_text: str
+    force: bool = False
 
 
 class ProjectInitRequest(BaseModel):
@@ -101,16 +105,62 @@ def get_manifest(root: str = Query(".")) -> dict[str, Any]:
     if not path:
         raise HTTPException(status_code=404, detail="Manifest bulunamadı.")
     manifest = load_yaml(path)
-    return {"path": str(path), "manifest": manifest, "yaml": dump_yaml(manifest), "validation": validate_manifest(manifest)}
+    return {"path": str(path), "manifest": manifest, "yaml": dump_yaml(manifest), "validation": validate_manifest(manifest, root=r)}
+
+
+@app.post("/api/manifest/validate")
+def validate_manifest_api(req: ManifestRequest) -> dict[str, Any]:
+    try:
+        r = project_root(req.root)
+        manifest = normalize_manifest(req.manifest)
+        return validate_manifest(manifest, root=r)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/manifest/match-chapter-files")
+def match_manifest_chapter_files(req: ManifestRequest) -> dict[str, Any]:
+    try:
+        r = project_root(req.root)
+        return match_chapter_files(r, req.manifest)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+
+@app.post("/api/manifest/render-yaml")
+def render_manifest_yaml(req: ManifestRequest) -> dict[str, Any]:
+    try:
+        r = project_root(req.root)
+        manifest = normalize_manifest(req.manifest)
+        return {"manifest": manifest, "yaml": dump_yaml(manifest), "validation": validate_manifest(manifest, root=r)}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/manifest/parse-yaml")
+def parse_manifest_yaml_api(req: ManifestYamlRequest) -> dict[str, Any]:
+    try:
+        r = project_root(req.root)
+        manifest = normalize_manifest(parse_yaml_text(req.yaml_text))
+        return {"manifest": manifest, "yaml": dump_yaml(manifest), "validation": validate_manifest(manifest, root=r)}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/manifest/save")
 def save_manifest(req: ManifestRequest) -> dict[str, Any]:
     try:
         r = project_root(req.root)
+        manifest = normalize_manifest(req.manifest)
+        validation = validate_manifest(manifest, root=r)
+        if not validation.get("valid") and not req.force:
+            raise HTTPException(status_code=422, detail={"message": "Manifest hatalı olduğu için kaydedilmedi.", "validation": validation})
         path = find_manifest(r) or (r / "book_manifest.yaml")
-        write_yaml(path, req.manifest)
-        return {"ok": True, "path": str(path), "validation": validate_manifest(req.manifest)}
+        write_yaml(path, manifest)
+        return {"ok": True, "path": str(path), "validation": validation, "manifest": manifest, "yaml": dump_yaml(manifest)}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -119,10 +169,15 @@ def save_manifest(req: ManifestRequest) -> dict[str, Any]:
 def save_manifest_yaml(req: ManifestYamlRequest) -> dict[str, Any]:
     try:
         r = project_root(req.root)
-        manifest = parse_yaml_text(req.yaml_text)
+        manifest = normalize_manifest(parse_yaml_text(req.yaml_text))
+        validation = validate_manifest(manifest, root=r)
+        if not validation.get("valid") and not req.force:
+            raise HTTPException(status_code=422, detail={"message": "Manifest hatalı olduğu için kaydedilmedi.", "validation": validation})
         path = find_manifest(r) or (r / "book_manifest.yaml")
         write_yaml(path, manifest)
-        return {"ok": True, "path": str(path), "validation": validate_manifest(manifest), "manifest": manifest}
+        return {"ok": True, "path": str(path), "validation": validation, "manifest": manifest, "yaml": dump_yaml(manifest)}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

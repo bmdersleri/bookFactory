@@ -14,9 +14,8 @@
     </div>
     <div class="rootbox">
       <label>Kitap kökü</label>
-      <input id="projectRoot" value="." placeholder="Örn: C:\...\react-web veya workspace/react" />
+      <input id="projectRoot" value="." placeholder="C:\\...\\react-web veya ...\\BookFactory\\workspace\\react" />
       <button id="loadProject">Kitabı Aç</button>
-      <small>BookFactory klasörü değil, kitabın kendi klasörü seçilmelidir.</small>
     </div>
   </header>
 
@@ -43,10 +42,7 @@
         </div>
         <h3>Bölüm Durumu</h3>
         <div id="statusCounts" class="pillrow"></div>
-        <h3>Kitap Klasörü</h3>
-        <div id="pathInfo" class="list"></div>
-        <h3>Bulunan Kitap Çalışmaları</h3>
-        <div id="discoveredProjects" class="list"></div>
+        <div id="bookRootWarning" class="notice hidden"></div>
         <h3>Son Raporlar</h3>
         <div id="recentReports" class="list"></div>
       </section>
@@ -61,7 +57,7 @@
           <label>Konu<input id="wSubject" value="React ile modern web uygulaması geliştirme" /></label>
           <label>Hedef kitle<input id="wAudience" value="Lisans öğrencileri ve React öğrenmeye başlayan geliştiriciler" /></label>
           <label>Ön koşullar<input id="wPrereq" value="Temel HTML, CSS ve JavaScript" /></label>
-          <label>Bölüm sayısı<input id="wChapterCount" type="number" value="16" /></label>
+          <label>Bölüm sayısı<input id="wChapterCount" type="number" value="16" min="1" max="50" /></label>
           <label>Uygulama adı<input id="wAppName" value="KampüsHub" /></label>
           <label>Uygulama açıklaması<input id="wAppDesc" value="Üniversite öğrencileri için öğretim amaçlı React web uygulaması" /></label>
         </div>
@@ -78,26 +74,124 @@ MSW</textarea></label>
 React Native
 GraphQL / Apollo
 Backend / ORM</textarea></label>
-        <button id="makeArchitecturePrompt">LLM Kitap Kurgusu Promptu Üret</button>
+        <div class="toolbar">
+          <button id="makeArchitecturePrompt">LLM Kitap Kurgusu Promptu Üret</button>
+          <button id="copyArchitecturePrompt" class="secondary">Promptu Kopyala</button>
+        </div>
         <textarea id="architecturePrompt" class="mono large" placeholder="Üretilen prompt burada görünecek..."></textarea>
-        <button id="copyArchitecturePrompt">Promptu Kopyala</button>
       </section>
 
       <section id="manifest" class="panel">
-        <h2>2. Manifest Editörü</h2>
-        <div class="toolbar">
-          <button id="refreshManifest">Manifesti Yenile</button>
-          <button id="saveManifest">Manifesti Kaydet</button>
-          <button id="initProject">Klasör Yapısını Oluştur</button>
+        <div class="section-head">
+          <div>
+            <h2>2. Akıllı Manifest Editörü</h2>
+            <p>Form tabanlı düzenleme, canlı doğrulama, bölüm dosya eşleştirme ve güvenli kayıt.</p>
+          </div>
+          <div class="toolbar compact">
+            <button id="validateManifest">Kontrol Et</button>
+            <button id="saveManifestForm">Formdan Kaydet</button>
+            <button id="initProject" class="secondary">Klasör Yapısını Oluştur</button>
+          </div>
         </div>
-        <textarea id="manifestYaml" class="mono huge"></textarea>
+
+        <div id="manifestValidationBox" class="validation-box muted">Manifest henüz kontrol edilmedi.</div>
+
+        <div class="manifest-tabs">
+          <button class="manifest-tab active" data-mtab="mf-book">Kitap Bilgileri</button>
+          <button class="manifest-tab" data-mtab="mf-chapters">Bölümler</button>
+          <button class="manifest-tab" data-mtab="mf-scope">Kapsam</button>
+          <button class="manifest-tab" data-mtab="mf-automation">Otomasyon</button>
+          <button class="manifest-tab" data-mtab="mf-paths">Yollar</button>
+          <button class="manifest-tab" data-mtab="mf-yaml">YAML</button>
+        </div>
+
+        <div id="mf-book" class="manifest-panel visible">
+          <div class="grid2">
+            <label>Kitap adı<input id="mBookTitle" required /></label>
+            <label>Alt başlık<input id="mBookSubtitle" /></label>
+            <label>Yazar<input id="mBookAuthor" required /></label>
+            <label>Baskı<input id="mBookEdition" /></label>
+            <label>Yıl<input id="mBookYear" pattern="[0-9]{4}" maxlength="4" /></label>
+            <label>Framework sürümü<input id="mFrameworkVersion" /></label>
+            <label>Ana dil<input id="mPrimaryLanguage" placeholder="tr" /></label>
+            <label>Çıktı dilleri<input id="mOutputLanguages" placeholder="tr,en" /></label>
+          </div>
+          <div class="grid2">
+            <label>Uygulama adı<input id="mAppName" /></label>
+            <label>Uygulama açıklaması<input id="mAppDescription" /></label>
+          </div>
+        </div>
+
+        <div id="mf-chapters" class="manifest-panel">
+          <div class="toolbar">
+            <button id="addChapter">Bölüm Ekle</button>
+            <button id="renumberChapters" class="secondary">ID'leri Yeniden Numaralandır</button>
+            <button id="matchChapterFiles" class="secondary">Dosyaları Eşleştir</button>
+          </div>
+          <div class="hint">Dosya adı güvenli olmalıdır: küçük harf, ASCII, boşluksuz ve <code>.md</code> uzantılı. Örnek: <code>chapter_02_javascript_es6_react.md</code></div>
+          <table id="manifestChapterTable" class="editable-table">
+            <thead><tr><th>#</th><th>ID</th><th>Başlık</th><th>Dosya adı</th><th>Durum</th><th>Dosya</th><th>İşlem</th></tr></thead>
+            <tbody id="manifestChapterRows"></tbody>
+          </table>
+        </div>
+
+        <div id="mf-scope" class="manifest-panel">
+          <div class="grid2">
+            <label>Teknoloji kapsamı<textarea id="mScopeStack" class="large"></textarea></label>
+            <label>Kapsam dışı<textarea id="mOutOfScope" class="large"></textarea></label>
+          </div>
+        </div>
+
+        <div id="mf-automation" class="manifest-panel">
+          <div class="grid2 checks">
+            <label><span>Manifest validation</span><select id="mGateManifest"><option>required</option><option>optional</option></select></label>
+            <label><span>Chapter input generation</span><select id="mGateChapterInput"><option>optional</option><option>required</option></select></label>
+            <label><span>Outline review</span><select id="mGateOutline"><option>required</option><option>optional</option></select></label>
+            <label><span>Full text generation</span><select id="mGateFullText"><option>required</option><option>optional</option></select></label>
+            <label><span>Code validation</span><select id="mGateCodeValidation"><option>required</option><option>optional</option></select></label>
+            <label><span>Markdown quality check</span><select id="mGateMarkdownQuality"><option>required</option><option>optional</option></select></label>
+            <label><span>Post-production build</span><select id="mGatePostProduction"><option>optional</option><option>required</option></select></label>
+            <label><span>Proje durumu</span><select id="mProjectStatus"><option>in_progress</option><option>planned</option><option>done</option><option>archived</option></select></label>
+          </div>
+          <div class="grid2 checks">
+            <label class="check"><input type="checkbox" id="mCodeExtract" /> Kod çıkarma</label>
+            <label class="check"><input type="checkbox" id="mCodeTest" /> Kod testi</label>
+            <label class="check"><input type="checkbox" id="mGithubSync" /> GitHub sync</label>
+            <label class="check"><input type="checkbox" id="mQrGeneration" /> QR generation</label>
+            <label class="check"><input type="checkbox" id="mScreenshotAutomation" /> Screenshot automation</label>
+            <label class="check"><input type="checkbox" id="mMermaidGeneration" /> Mermaid generation</label>
+            <label class="check"><input type="checkbox" id="mManualOverride" /> Manual asset override</label>
+          </div>
+        </div>
+
+        <div id="mf-paths" class="manifest-panel">
+          <div class="grid2">
+            <label>Chapters<input id="mPathChapters" placeholder="chapters" /></label>
+            <label>Chapter prompts<input id="mPathChapterPrompts" placeholder="prompts/chapter_inputs" /></label>
+            <label>Chapter backups<input id="mPathChapterBackups" placeholder="chapter_backups" /></label>
+            <label>Build<input id="mPathBuild" placeholder="build" /></label>
+            <label>Assets<input id="mPathAssets" placeholder="assets" /></label>
+            <label>Exports<input id="mPathExports" placeholder="exports" /></label>
+          </div>
+          <div class="hint">Bu alanlar kitap köküne göre göreli olmalıdır. Mutlak yol veya <code>..</code> kullanılmamalıdır.</div>
+        </div>
+
+        <div id="mf-yaml" class="manifest-panel">
+          <div class="toolbar">
+            <button id="refreshManifest" class="secondary">YAML'i Yenile</button>
+            <button id="loadYamlToForm" class="secondary">YAML'i Forma Yükle</button>
+            <button id="previewYaml" class="secondary">Formdan YAML Önizle</button>
+            <button id="saveManifestYaml">YAML'den Kaydet</button>
+          </div>
+          <textarea id="manifestYaml" class="mono huge"></textarea>
+        </div>
       </section>
 
       <section id="chapters" class="panel">
         <h2>3. Bölüm Yönetimi</h2>
         <div class="toolbar">
           <button id="generatePrompts">Bölüm Girdi Promptlarını Üret</button>
-          <button id="refreshChapters">Bölümleri Yenile</button>
+          <button id="refreshChapters" class="secondary">Bölümleri Yenile</button>
         </div>
         <table id="chapterTable">
           <thead><tr><th>#</th><th>ID</th><th>Başlık</th><th>Durum</th><th>Prompt</th><th>MD</th></tr></thead>
@@ -118,7 +212,7 @@ Backend / ORM</textarea></label>
           <label>Seçenekler JSON<textarea id="jobOptions" class="mono small">{}</textarea></label>
         </div>
         <button id="runStep">Seçili Adımı Çalıştır</button>
-        <button id="runFull">Tam Üretim Hattını Çalıştır</button>
+        <button id="runFull" class="secondary">Tam Üretim Hattını Çalıştır</button>
         <div class="jobbox">
           <h3>Aktif İş</h3>
           <div id="jobInfo">Henüz iş yok.</div>

@@ -250,7 +250,13 @@ def normalize_manifest(raw: dict[str, Any]) -> dict[str, Any]:
     return manifest
 
 
-def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
+def validate_manifest(manifest: dict[str, Any], root: Path | None = None) -> dict[str, Any]:
+    """Validate a book manifest for GUI editing and production safety.
+
+    The validator separates blocking errors from warnings.  Errors prevent saving
+    from the form/YAML editor unless the API is explicitly called with force.
+    Warnings are shown to the user but do not block saving.
+    """
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -258,40 +264,139 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         return {"valid": False, "errors": ["Manifest object/dict olmalıdır."], "warnings": []}
 
     book = manifest.get("book") or {}
-    if not book.get("title"):
+    if not isinstance(book, dict):
+        errors.append("book alanı object/dict olmalıdır.")
+        book = {}
+    if not str(book.get("title") or "").strip():
         errors.append("book.title eksik.")
-    if not book.get("author"):
+    if not str(book.get("author") or "").strip():
         errors.append("book.author eksik.")
-    if book.get("year") and not re.match(r"^[0-9]{4}$", str(book.get("year"))):
-        warnings.append("book.year dört haneli yıl biçiminde değil.")
+    year = str(book.get("year") or "").strip()
+    if year and not re.match(r"^[0-9]{4}$", year):
+        errors.append("book.year dört haneli yıl biçiminde olmalıdır.")
 
     language = manifest.get("language") or {}
+    if not isinstance(language, dict):
+        errors.append("language alanı object/dict olmalıdır.")
+        language = {}
     book_language = book.get("language") or book.get("lang")
     if not language.get("primary_language") and not book_language:
         errors.append("language.primary_language eksik veya book.language tanımlı değil.")
+    out_langs = language.get("output_languages")
+    if out_langs is not None and not isinstance(out_langs, list):
+        warnings.append("language.output_languages liste olmalıdır; örnek: ['tr']")
+
+    project = manifest.get("project") or {}
+    if project and not isinstance(project, dict):
+        errors.append("project alanı object/dict olmalıdır.")
+        project = {}
+    paths = project.get("paths") or {}
+    if paths and not isinstance(paths, dict):
+        errors.append("project.paths alanı object/dict olmalıdır.")
+        paths = {}
+    for key, value in paths.items():
+        rel = str(value or "").strip()
+        if not rel:
+            warnings.append(f"project.paths.{key} boş görünüyor.")
+            continue
+        p = Path(rel)
+        if p.is_absolute():
+            errors.append(f"project.paths.{key} mutlak yol olmamalıdır: {rel}")
+        if ".." in p.parts:
+            errors.append(f"project.paths.{key} üst klasöre çıkmamalıdır: {rel}")
 
     chapters = chapters_from_manifest(manifest)
     if not chapters:
         errors.append("structure.chapters listesi eksik veya boş.")
+
     seen_ids: set[str] = set()
     seen_files: set[str] = set()
+    allowed_status = {"planned", "prompt_ready", "in_progress", "draft", "review", "done", "skipped", "archived"}
+    unsafe_name_re = re.compile(r"^[A-Za-z0-9_./-]+\.md$")
+
     for i, ch in enumerate(chapters, start=1):
-        cid = chapter_id(ch, i)
-        cfile = chapter_file(ch, i)
+        cid = chapter_id(ch, i).strip()
+        cfile = chapter_file(ch, i).strip()
+        raw_file = str(ch.get("file") or ch.get("path") or cfile).strip()
+
         if not re.match(r"^chapter_[0-9]{2}$", cid):
             warnings.append(f"{cid}: id önerilen chapter_XX biçiminde değil.")
+        expected_id = f"chapter_{i:02d}"
+        if cid != expected_id:
+            warnings.append(f"{cid}: sıra numarasına göre beklenen id {expected_id}.")
         if cid in seen_ids:
             errors.append(f"Tekrarlanan bölüm id: {cid}")
         seen_ids.add(cid)
-        if not ch.get("title"):
+
+        if not str(ch.get("title") or "").strip():
             errors.append(f"{cid}: title eksik.")
+
         if not cfile.endswith(".md"):
             errors.append(f"{cid}: file .md ile bitmeli.")
+        if any(part == ".." for part in Path(raw_file).parts):
+            errors.append(f"{cid}: file/path üst klasöre çıkmamalıdır: {raw_file}")
+        if Path(raw_file).is_absolute():
+            errors.append(f"{cid}: file/path mutlak yol olmamalıdır: {raw_file}")
+        if " " in cfile:
+            errors.append(f"{cid}: dosya adında boşluk olmamalıdır: {cfile}")
+        if not unsafe_name_re.match(cfile):
+            errors.append(f"{cid}: dosya adı güvenli ASCII biçiminde olmalıdır: {cfile}")
         if cfile in seen_files:
             errors.append(f"Tekrarlanan bölüm dosyası: {cfile}")
         seen_files.add(cfile)
 
+        status = str(ch.get("status") or "planned")
+        if status not in allowed_status:
+            warnings.append(f"{cid}: status alışılmış değerlerden biri değil: {status}")
+
+        if root is not None:
+            chapter_path = chapter_markdown_path(root, ch, i)
+            if status in {"done", "draft", "review", "in_progress"} and not chapter_path.exists():
+                warnings.append(f"{cid}: status '{status}' ancak dosya bulunamadı: {safe_relative(chapter_path, root)}")
+
     return {"valid": not errors, "errors": errors, "warnings": warnings}
+
+
+def match_chapter_files(root: Path, manifest: dict[str, Any]) -> dict[str, Any]:
+    """Match manifest chapter file names against files in root/chapters.
+
+    For each chapter, the function first checks the current resolved file.  If it
+    does not exist, it looks for markdown files that start with the chapter id,
+    such as `chapter_02_*.md`, and updates `chapter.file` to that real filename.
+    """
+    manifest = normalize_manifest(manifest)
+    chapters_dir = root / "chapters"
+    changes: list[dict[str, Any]] = []
+    unmatched: list[dict[str, Any]] = []
+    chapters_dir.mkdir(parents=True, exist_ok=True)
+    all_md = sorted(chapters_dir.glob("*.md"))
+
+    for i, ch in enumerate(chapters_from_manifest(manifest), start=1):
+        cid = chapter_id(ch, i)
+        current = chapter_markdown_path(root, ch, i)
+        old_file = chapter_file(ch, i)
+        if current.exists():
+            ch["file"] = current.name
+            continue
+        candidates = sorted(chapters_dir.glob(f"{cid}_*.md"))
+        if not candidates:
+            # Secondary heuristic: use order if a file starts with chapter number.
+            candidates = [p for p in all_md if p.name.startswith(f"chapter_{i:02d}_")]
+        if candidates:
+            new_file = candidates[0].name
+            ch["file"] = new_file
+            if old_file != new_file:
+                changes.append({"id": cid, "old_file": old_file, "new_file": new_file})
+        else:
+            unmatched.append({"id": cid, "expected_file": old_file, "title": ch.get("title", "")})
+
+    manifest.setdefault("project", {})["updated_at"] = utc_now()
+    return {
+        "manifest": manifest,
+        "changes": changes,
+        "unmatched": unmatched,
+        "validation": validate_manifest(manifest, root=root),
+    }
 
 
 def ensure_workspace(root: Path) -> None:
@@ -345,7 +450,7 @@ def project_snapshot(root: Path) -> dict[str, Any]:
     validation = {"valid": False, "errors": base_errors, "warnings": []}
     if manifest_path:
         manifest = load_yaml(manifest_path)
-        validation = validate_manifest(manifest)
+        validation = validate_manifest(manifest, root=root)
     chapters = chapters_from_manifest(manifest)
     chapter_rows = []
     for i, ch in enumerate(chapters, start=1):
