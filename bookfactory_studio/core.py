@@ -41,8 +41,43 @@ SAFE_DIRS = [
 ]
 
 
+STUDIO_CONFIG_FILE = ".studio_config.json"
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def studio_config_path() -> Path:
+    return framework_root() / STUDIO_CONFIG_FILE
+
+
+def load_studio_config() -> dict[str, Any]:
+    path = studio_config_path()
+    if not path.exists():
+        return {"active_book": None, "recent_books": []}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {"active_book": None, "recent_books": []}
+
+
+def save_studio_config(config: dict[str, Any]) -> None:
+    studio_config_path().write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def set_active_book(book_root: str) -> dict[str, Any]:
+    """Persist the active book root and update the recent books list (max 10)."""
+    resolved = str(Path(book_root).expanduser().resolve())
+    config = load_studio_config()
+    config["active_book"] = resolved
+    recent: list[str] = config.get("recent_books") or []
+    if resolved in recent:
+        recent.remove(resolved)
+    recent.insert(0, resolved)
+    config["recent_books"] = recent[:10]
+    save_studio_config(config)
+    return config
 
 
 def project_root(path: str | None = None) -> Path:

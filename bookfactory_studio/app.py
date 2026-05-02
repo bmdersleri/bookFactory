@@ -14,8 +14,10 @@ from pydantic import BaseModel, Field
 from .core import (
     dump_yaml,
     find_manifest,
+    framework_root,
     import_chapter_markdown,
     initialize_project,
+    load_studio_config,
     load_yaml,
     match_chapter_files,
     normalize_manifest,
@@ -26,6 +28,7 @@ from .core import (
     read_text_report,
     render_architecture_prompt,
     save_architecture_prompt,
+    set_active_book,
     validate_manifest,
     write_yaml,
 )
@@ -67,6 +70,10 @@ class JobRequest(BaseModel):
     options: dict[str, Any] = Field(default_factory=dict)
 
 
+class StudioConfigRequest(BaseModel):
+    active_book: str
+
+
 app = FastAPI(title="BookFactory Studio", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
@@ -88,6 +95,37 @@ def index() -> HTMLResponse:
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     return {"ok": True, "service": "BookFactory Studio"}
+
+
+@app.get("/api/studio/config")
+def get_studio_config() -> dict[str, Any]:
+    config = load_studio_config()
+    fw = str(framework_root())
+    return {
+        "framework_root": fw,
+        "active_book": config.get("active_book"),
+        "recent_books": [b for b in (config.get("recent_books") or []) if Path(b).exists()],
+    }
+
+
+@app.post("/api/studio/config")
+def post_studio_config(req: StudioConfigRequest) -> dict[str, Any]:
+    try:
+        book_path = Path(req.active_book).expanduser().resolve()
+        fw = framework_root()
+        if book_path == fw:
+            raise HTTPException(status_code=400, detail="Kitap kökü, framework kökü ile aynı olamaz.")
+        config = set_active_book(str(book_path))
+        return {
+            "ok": True,
+            "framework_root": str(fw),
+            "active_book": config["active_book"],
+            "recent_books": [b for b in (config.get("recent_books") or []) if Path(b).exists()],
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/project")

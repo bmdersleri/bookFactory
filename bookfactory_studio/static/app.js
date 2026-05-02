@@ -82,6 +82,32 @@ function normalizeChapterId(n) {
   return `chapter_${String(n).padStart(2, '0')}`;
 }
 
+function renderRecentBooks(books) {
+  const sel = $('recentBooksSelect');
+  sel.innerHTML = '<option value="">Son kitaplar…</option>';
+  (books || []).forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b;
+    const name = b.replace(/\\/g, '/').split('/').pop();
+    opt.textContent = name + '  —  ' + b;
+    sel.appendChild(opt);
+  });
+}
+
+async function initStudio() {
+  try {
+    const config = await api('/api/studio/config');
+    $('frameworkRoot').textContent = config.framework_root || '-';
+    if (config.active_book) {
+      $('projectRoot').value = config.active_book;
+    }
+    renderRecentBooks(config.recent_books || []);
+  } catch (e) {
+    $('frameworkRoot').textContent = '(config okunamadı)';
+  }
+  await loadProject();
+}
+
 async function loadProject() {
   try {
     setStatus('Kitap projesi yükleniyor...');
@@ -95,6 +121,14 @@ async function loadProject() {
     await refreshManifest(false);
     const valid = project.validation?.valid;
     setStatus('Kitap projesi yüklendi: ' + project.root, valid ? 'good' : 'warn');
+    // Seçili kitabı config'e kaydet
+    const r = root();
+    if (r && r !== '.') {
+      try {
+        const cfg = await api('/api/studio/config', {method: 'POST', body: JSON.stringify({active_book: r})});
+        renderRecentBooks(cfg.recent_books || []);
+      } catch {}
+    }
   } catch (e) {
     setStatus('Hata: ' + e.message, 'bad');
   }
@@ -540,6 +574,10 @@ async function loadReport(path) {
 }
 
 $('loadProject').addEventListener('click', loadProject);
+$('recentBooksSelect').addEventListener('change', async () => {
+  const val = $('recentBooksSelect').value;
+  if (val) { $('projectRoot').value = val; $('recentBooksSelect').value = ''; await loadProject(); }
+});
 $('refreshManifest').addEventListener('click', () => refreshManifest(true));
 $('validateManifest').addEventListener('click', validateManifestFromForm);
 $('saveManifestForm').addEventListener('click', saveManifestFromForm);
@@ -560,4 +598,4 @@ $('runFull').addEventListener('click', () => startJob('full_production'));
 $('refreshReports').addEventListener('click', refreshReports);
 ['mBookTitle','mBookAuthor','mBookYear','mPrimaryLanguage','mPathChapters','mPathChapterPrompts','mPathBuild','mPathAssets','mPathExports'].forEach(id => $(id).addEventListener('input', markInvalidInputs));
 
-loadProject();
+initStudio();

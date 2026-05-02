@@ -35,9 +35,14 @@ body {
 }
 .topbar { display: flex; justify-content: space-between; gap: 24px; align-items: center; padding: 18px 24px; background: #101828; color: #fff; }
 .topbar h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
-.topbar p { margin: 4px 0 0; color: #d0d5dd; font-weight: 400; }
-.rootbox { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; min-width: 520px; align-items: end; }
-.rootbox label { grid-column: 1 / -1; font-size: 12px; color: #d0d5dd; }
+.topbar-brand { display: flex; flex-direction: column; gap: 2px; }
+.fw-path { margin: 0; color: #8ba0bf; font-size: 12px; font-weight: 400; }
+.fw-path code { color: #b0c4de; font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; letter-spacing: 0; }
+.rootbox { display: flex; flex-direction: column; gap: 4px; min-width: 560px; }
+.rootbox > label { font-size: 12px; color: #d0d5dd; }
+.rootinput-group { display: flex; gap: 6px; align-items: center; }
+.rootinput-group input { flex: 1; min-width: 180px; }
+.rootinput-group select { width: 160px; flex-shrink: 0; background: #1e2d44; color: #d0d5dd; border: 1px solid #2d4268; border-radius: 10px; }
 input, textarea, select {
   width: 100%;
   border: 1px solid var(--line);

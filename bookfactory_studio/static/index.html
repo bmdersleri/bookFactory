@@ -8,14 +8,19 @@
 </head>
 <body>
   <header class="topbar">
-    <div>
+    <div class="topbar-brand">
       <h1>BookFactory Studio</h1>
-      <p>Manifest tabanlı kitap üretim sihirbazı ve production kontrol paneli</p>
+      <p class="fw-path">Framework: <code id="frameworkRoot">yükleniyor…</code></p>
     </div>
     <div class="rootbox">
-      <label>Kitap kökü</label>
-      <input id="projectRoot" value="." placeholder="C:\\...\\react-web veya ...\\BookFactory\\workspace\\react" />
-      <button id="loadProject">Kitabı Aç</button>
+      <label>Aktif Kitap</label>
+      <div class="rootinput-group">
+        <input id="projectRoot" placeholder="C:\...\react-web" />
+        <select id="recentBooksSelect" title="Son kitaplar">
+          <option value="">Son kitaplar…</option>
+        </select>
+        <button id="loadProject">Kitabı Aç</button>
+      </div>
     </div>
   </header>
 
