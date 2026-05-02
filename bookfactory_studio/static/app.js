@@ -65,6 +65,7 @@ function showTab(name, updateHash = true) {
   if (name === 'dashboard') renderDashboard();
   if (name === 'control') renderControlPanel();
   if (name === 'media') refreshMedia();
+  if (name === 'cloud') refreshCloudStatus();
   updateStepper(name);
 }
 
@@ -287,6 +288,29 @@ async function refreshMedia() {
   $('mediaGrid').innerHTML = data.assets.map(a => `<div class="media-item"><div class="media-thumb"><img src="/api/project/file?path=${encodeURIComponent(a.rel_path)}&root=${encodeURIComponent($('projectRoot').value)}"></div><div class="media-info"><div class="media-name">${escapeHtml(a.name)}</div><button class="smallbtn" onclick="copyMarkdownLink('${a.rel_path}', '${a.name}')">Link</button></div></div>`).join('');
 }
 
+async function refreshCloudStatus() {
+  try {
+    const status = await api('/api/cloud/status?root=' + encodeURIComponent($('projectRoot').value));
+    const setInd = (id, val) => {
+      const el = $(id);
+      el.textContent = val ? 'YÜKLÜ' : 'EKSİK';
+      el.className = 'status-indicator ' + (val ? 'good' : 'bad');
+    };
+    setInd('statusCodespace', status.codespace);
+    setInd('statusActions', status.github_actions);
+    setInd('statusDigitalTwin', status.digital_twin);
+  } catch (e) { console.error(e); }
+}
+
+async function provisionCloud() {
+  try {
+    setStatus('GitHub yapılandırmaları oluşturuluyor...', 'warn');
+    const res = await api('/api/cloud/provision?root=' + encodeURIComponent($('projectRoot').value), { method: 'POST' });
+    setStatus(`${res.provisioned_files.length} dosya oluşturuldu.`, 'good');
+    await refreshCloudStatus();
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
 async function copyMarkdownLink(path, name) { await navigator.clipboard.writeText(`![${name.split('.')[0]}](../${path})`); showToast('Link kopyalandı.'); }
 
 // Global Init
@@ -297,6 +321,8 @@ $('chapterContent').addEventListener('input', updateMarkdownPreview);
 $('addGlossaryTerm').addEventListener('click', addGlossaryRow);
 $('addResource').addEventListener('click', addResourceRow);
 $('saveManifestForm').addEventListener('click', saveManifestForm);
+$('refreshCloudStatus').addEventListener('click', refreshCloudStatus);
+$('provisionCloud').addEventListener('click', provisionCloud);
 $('closeDebug').addEventListener('click', () => $('debugModal').classList.add('hidden'));
 $('saveAndTestCode').addEventListener('click', saveAndTestCode);
 $('insertMetaBlock').addEventListener('click', () => {
@@ -313,7 +339,7 @@ $('mwScreenshot').addEventListener('change', (e) => $('mwScreenshotIdBox').class
 $('runStep').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: $('pipelineStep').value, options: JSON.parse($('jobOptions').value || '{}') }) }).then(j => pollJob(j.id)); });
 $('runFull').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: 'full_production', options: {}}) }).then(j => pollJob(j.id)); });
 $('runWebSite').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({root: $('projectRoot').value, step: 'generate-web-site', options: {}}) }).then(j => pollJob(j.id)); });
-window.addEventListener('keydown', (e) => { if (e.altKey && e.key >= '1' && e.key <= '8') showTab(['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports', 'media'][parseInt(e.key)-1]); });
+window.addEventListener('keydown', (e) => { if (e.altKey && e.key >= '1' && e.key <= '9') showTab(['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports', 'cloud', 'media'][parseInt(e.key)-1]); });
 async function loadPipelineSteps() { const data = await api('/api/pipeline/steps'); $('pipelineStep').innerHTML = data.steps.map(s => `<option value="${s.id}">${s.title}</option>`).join(''); }
 
 loadProject();

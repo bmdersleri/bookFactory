@@ -2,7 +2,18 @@
 
 All notable changes to BookFactory are documented in this file.
 
-## [4.0.0] - 2026-05-02
+## [4.1.0] - 2026-05-02
+
+### Added
+- **Cloud-Native Publishing:** Full integration for GitHub Codespaces and GitHub Pages.
+- **Provisioning Engine:** New `CloudService` to inject `.devcontainer` and `.github/workflows` templates into book projects.
+- **Auto-Deployment Workflow:** Automated MkDocs build and deployment to GitHub Pages on push.
+- **Quality Gate Workflow:** Continuous validation and code testing via GitHub Actions.
+- **Studio Cloud Hub:** Dedicated UI tab for checking and provisioning cloud configurations.
+
+### Changed
+- Unified Studio navigation to include 'GitHub & Cloud' (Alt+8).
+- Updated documentation with Cloud-Native publishing standards.
 
 ### Added
 - **Resource & Dataset Tracking:** Centralized management of CSV, JSON, and external resources in the manifest and Studio.

@@ -13,7 +13,7 @@
   <header class="topbar">
     <div class="topbar-brand">
       <h1>BookFactory Studio</h1>
-      <span class="vtag">v4.0.0 Technical Verticalization</span>
+      <span class="vtag">v4.1.0 Cloud-Native Publishing</span>
       <p class="fw-path">Framework: <code id="frameworkRoot">yükleniyor…</code></p>
     </div>
     <div class="rootbox">
@@ -38,6 +38,7 @@
       <button class="tab" data-tab="chapters">Bölümler</button>
       <button class="tab" data-tab="production">Production</button>
       <button class="tab" data-tab="reports">Raporlar</button>
+      <button class="tab" data-tab="cloud">GitHub & Cloud</button>
       <button class="tab" data-tab="media">Medya Kütüphanesi</button>
       <div style="margin-top: auto; padding-top: 20px;">
         <button id="openInitWizard" class="secondary" style="width: 100%;">+ Yeni Kitap Projesi</button>
@@ -402,6 +403,49 @@ Backend / ORM</textarea></label>
         <div class="split">
           <div id="reportList" class="list"></div>
           <pre id="reportContent" class="report"></pre>
+        </div>
+      </section>
+
+      <section id="cloud" class="panel">
+        <div class="section-head">
+          <div>
+            <h2>7. GitHub & Cloud Entegrasyonu</h2>
+            <p>Codespaces ve GitHub Pages yapılandırmalarını tek tıkla projenize ekleyin.</p>
+          </div>
+          <div class="toolbar compact">
+            <button id="refreshCloudStatus" class="secondary">Durumu Kontrol Et</button>
+            <button id="provisionCloud">Entegrasyonları Oluştur</button>
+          </div>
+        </div>
+
+        <div class="cloud-status-grid">
+          <div class="card cloud-card" id="cloudCodespaceCard">
+            <span class="icon">💻</span>
+            <h4>GitHub Codespaces</h4>
+            <p>Bulut tabanlı geliştirme ortamı.</p>
+            <div class="status-indicator" id="statusCodespace">Kontrol ediliyor...</div>
+          </div>
+          <div class="card cloud-card" id="cloudActionsCard">
+            <span class="icon">🚀</span>
+            <h4>GitHub Actions</h4>
+            <p>Otomatik test ve Pages yayını.</p>
+            <div class="status-indicator" id="statusActions">Kontrol ediliyor...</div>
+          </div>
+          <div class="card cloud-card" id="cloudPagesCard">
+            <span class="icon">📄</span>
+            <h4>Digital Twin (Pages)</h4>
+            <p>Kitabın web sitesi yayını.</p>
+            <div class="status-indicator" id="statusDigitalTwin">Kontrol ediliyor...</div>
+          </div>
+        </div>
+
+        <div class="notice info">
+          <h4>💡 Nasıl Çalışır?</h4>
+          <ol>
+            <li><strong>Entegrasyonları Oluştur:</strong> Projenize <code>.devcontainer</code> ve <code>.github/workflows</code> klasörlerini ekler.</li>
+            <li><strong>GitHub'a Push Edin:</strong> Değişiklikleri commit edip GitHub'a gönderdiğinizde Actions otomatik olarak çalışır.</li>
+            <li><strong>Pages Yayını:</strong> Repo ayarlarından Pages kaynağını "GitHub Actions" olarak seçin.</li>
+          </ol>
         </div>
       </section>
 

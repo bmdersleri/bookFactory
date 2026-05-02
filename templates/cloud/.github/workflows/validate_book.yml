@@ -1,0 +1,29 @@
+name: Book Quality & Validation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install .
+          
+      - name: Validate Manifest
+        run: bookfactory validate --manifest manifests/book_manifest.yaml
+        
+      - name: Extract & Test Code
+        run: |
+          bookfactory-studio --step test_code --root .

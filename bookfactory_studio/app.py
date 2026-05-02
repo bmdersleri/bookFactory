@@ -293,9 +293,31 @@ def editor_review(chapter_id: str, root: str = Query(".")) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@app.get("/api/pipeline/steps")
-def steps() -> dict[str, Any]:
-    return {"steps": pipeline_steps()}
+from .services.cloud_service import CloudService
+
+
+@app.get("/api/cloud/status")
+def cloud_status(root: str = Query(".")) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        return CloudService.check_cloud_status(r)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/cloud/provision")
+def cloud_provision(root: str = Query(".")) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        manifest_path = ManifestService.find(r)
+        if not manifest_path:
+            raise HTTPException(status_code=400, detail="Manifest bulunamadı.")
+        
+        manifest = ManifestService.load(manifest_path)
+        files = CloudService.provision_github_configs(r, manifest)
+        return {"status": "success", "provisioned_files": files}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/jobs")
