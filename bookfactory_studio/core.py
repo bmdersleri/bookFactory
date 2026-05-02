@@ -602,6 +602,192 @@ def initialize_project(root: Path, manifest: dict[str, Any], copy_manifest_to_ma
     return project_snapshot(root)
 
 
+def read_json_if_exists(path: Path) -> dict[str, Any]:
+    if not path.exists() or not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def existing_screenshot_path(root: Path, marker_id: str) -> str:
+    for rel in (
+        f"assets/final/screenshots/{marker_id}.png",
+        f"assets/manual/screenshots/{marker_id}.png",
+        f"assets/auto/screenshots/{marker_id}.png",
+        f"screenshots/{marker_id}.png",
+    ):
+        path = root / rel
+        if path.exists():
+            return rel
+    return ""
+
+
+def chapter_screenshot_markers(path: Path) -> list[str]:
+    if not path.exists() or not path.is_file():
+        return []
+    text = path.read_text(encoding="utf-8", errors="replace")
+    return re.findall(r"\[SCREENSHOT:([A-Za-z0-9_\-]+)\]", text)
+
+
+def control_panel_snapshot(root: Path) -> dict[str, Any]:
+    """Build a read-only production control-panel snapshot for Studio.
+
+    The snapshot intentionally uses existing manifests/reports/artifacts instead of
+    starting production jobs.  It lets the GUI, CLI wrappers and future CI checks
+    read the same status model without coupling the dashboard to long-running work.
+    """
+    snapshot = project_snapshot(root)
+    manifest = snapshot.get("manifest") or {}
+    validation = snapshot.get("validation") or {"valid": False, "errors": [], "warnings": []}
+    chapters = chapters_from_manifest(manifest)
+
+    code_manifest = read_json_if_exists(root / "build" / "code_manifest.json")
+    code_items = code_manifest.get("items") if isinstance(code_manifest.get("items"), list) else []
+    tests = read_json_if_exists(root / "build" / "test_reports" / "code_test_report.json")
+    test_results = tests.get("results") if isinstance(tests.get("results"), list) else []
+    test_by_chapter: dict[str, list[dict[str, Any]]] = {}
+    code_by_chapter: dict[str, list[dict[str, Any]]] = {}
+    for item in code_items:
+        if isinstance(item, dict):
+            code_by_chapter.setdefault(str(item.get("chapter_id") or ""), []).append(item)
+    for result in test_results:
+        if isinstance(result, dict):
+            test_by_chapter.setdefault(str(result.get("chapter_id") or ""), []).append(result)
+
+    matrix: list[dict[str, Any]] = []
+    screenshot_items: list[dict[str, Any]] = []
+    for i, ch in enumerate(chapters, start=1):
+        cid = chapter_id(ch, i)
+        cpath = chapter_markdown_path(root, ch, i)
+        qpath = root / "build" / "quality_reports" / f"{cid}_quality_report.md"
+        markers = chapter_screenshot_markers(cpath)
+        plan = ch.get("screenshot_plan") if isinstance(ch.get("screenshot_plan"), list) else []
+        planned_ids = [str(item.get("id") or "") for item in plan if isinstance(item, dict) and item.get("id")]
+        all_markers = list(dict.fromkeys(markers + planned_ids))
+        missing_files = [sid for sid in all_markers if not existing_screenshot_path(root, sid)]
+        chapter_tests = test_by_chapter.get(cid, [])
+        failed_tests = [r for r in chapter_tests if r.get("status") == "failed"]
+        code_count = len(code_by_chapter.get(cid, []))
+
+        row = {
+            "order": i,
+            "id": cid,
+            "title": ch.get("title", ""),
+            "status": ch.get("status", "planned"),
+            "draft": cpath.exists(),
+            "full_text": cpath.exists() and cpath.stat().st_size > 0,
+            "quality_report": safe_relative(qpath, root) if qpath.exists() else "",
+            "code_blocks": code_count,
+            "code_tests": {
+                "total": len(chapter_tests),
+                "passed": len([r for r in chapter_tests if r.get("status") == "passed"]),
+                "failed": len(failed_tests),
+                "skipped": len([r for r in chapter_tests if r.get("status") == "skipped"]),
+            },
+            "screenshots": {
+                "markers": markers,
+                "planned": planned_ids,
+                "missing_files": missing_files,
+            },
+        }
+        matrix.append(row)
+
+        if not all_markers and (manifest.get("quality_gates") or {}).get("require_screenshot_plan"):
+            screenshot_items.append({
+                "chapter_id": cid,
+                "severity": "warn",
+                "message": "Screenshot marker/plan bulunamadı.",
+                "route": "",
+            })
+        for sid in missing_files:
+            route = ""
+            for item in plan:
+                if isinstance(item, dict) and item.get("id") == sid:
+                    route = str(item.get("route") or "")
+                    break
+            screenshot_items.append({
+                "chapter_id": cid,
+                "severity": "missing",
+                "message": f"{sid}.png bulunamadı.",
+                "route": route,
+                "marker": sid,
+            })
+
+    health_checks = [
+        {"name": "Manifest", "status": "ok" if validation.get("valid") else "fail", "detail": "Geçerli" if validation.get("valid") else "; ".join(validation.get("errors") or [])},
+        {"name": "PyYAML", "status": "ok" if yaml is not None else "fail", "detail": "Yüklü" if yaml is not None else "Eksik"},
+        {"name": "Kitap kökü", "status": "warn" if snapshot.get("is_framework_root") else "ok", "detail": snapshot.get("root")},
+        {"name": "Chapters", "status": "ok" if (root / "chapters").exists() else "warn", "detail": safe_relative(root / "chapters", root)},
+        {"name": "Build", "status": "ok" if (root / "build").exists() else "warn", "detail": safe_relative(root / "build", root)},
+        {"name": "Exports", "status": "ok" if (root / "exports").exists() else "warn", "detail": safe_relative(root / "exports", root)},
+    ]
+
+    failed_results = [r for r in test_results if isinstance(r, dict) and r.get("status") == "failed"]
+    repair_prompts = []
+    for result in failed_results[:10]:
+        steps = result.get("steps") if isinstance(result.get("steps"), list) else []
+        failure_text = "\n".join(
+            str(step.get("stderr") or step.get("stdout") or "")
+            for step in steps
+            if isinstance(step, dict) and int(step.get("returncode") or 0) != 0
+        ).strip()
+        repair_prompts.append({
+            "id": result.get("id"),
+            "chapter_id": result.get("chapter_id"),
+            "language": result.get("language"),
+            "file": result.get("file"),
+            "prompt": (
+                "Aşağıdaki BookFactory kod bloğu testte başarısız oldu. "
+                "CODE_META alanlarını koruyarak yalnızca hatayı düzelt.\n\n"
+                f"- id: {result.get('id')}\n"
+                f"- chapter_id: {result.get('chapter_id')}\n"
+                f"- language: {result.get('language')}\n"
+                f"- file: {result.get('file')}\n\n"
+                f"Hata çıktısı:\n{failure_text or 'Ayrıntı test raporunda.'}"
+            ),
+        })
+
+    export_files = []
+    for base in (root / "exports", root / "build"):
+        if not base.exists():
+            continue
+        for path in sorted(base.rglob("*")):
+            if path.is_file() and path.suffix.lower() in {".docx", ".pdf", ".epub", ".html", ".zip"}:
+                export_files.append({
+                    "path": safe_relative(path, root),
+                    "format": path.suffix.lower().lstrip("."),
+                    "size": path.stat().st_size,
+                    "modified": datetime.fromtimestamp(path.stat().st_mtime).isoformat(timespec="seconds"),
+                })
+
+    return {
+        "health": {
+            "checks": health_checks,
+            "errors": validation.get("errors", []),
+            "warnings": validation.get("warnings", []),
+        },
+        "chapter_matrix": matrix,
+        "code_tests": {
+            "summary": tests.get("summary") or {"total": 0, "passed": 0, "failed": 0, "skipped": 0},
+            "failed": failed_results,
+            "report_path": "build/test_reports/code_test_report.json" if tests else "",
+        },
+        "screenshots": {
+            "items": screenshot_items,
+            "missing_count": len([x for x in screenshot_items if x["severity"] == "missing"]),
+        },
+        "exports": {
+            "files": sorted(export_files, key=lambda x: x["modified"], reverse=True)[:20],
+        },
+        "repair": {
+            "prompts": repair_prompts,
+        },
+    }
+
+
 def project_snapshot(root: Path) -> dict[str, Any]:
     manifest_path = find_manifest(root)
     manifest: dict[str, Any] = {}

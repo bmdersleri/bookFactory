@@ -6,7 +6,10 @@
       "Bash(Sort-Object Name)",
       "PowerShell(Stop-Process *)",
       "PowerShell(Start-Process \"chrome.exe\" --ArgumentList \"http://127.0.0.1:8765\", \"--new-window\", \"--remote-debugging-port=9222\")",
-      "PowerShell(Start-Process \"chrome.exe\" -ArgumentList \"http://127.0.0.1:8765\", \"--new-window\", \"--remote-debugging-port=9222\")"
+      "PowerShell(Start-Process \"chrome.exe\" -ArgumentList \"http://127.0.0.1:8765\", \"--new-window\", \"--remote-debugging-port=9222\")",
+      "Bash(Get-ChildItem -Force)",
+      "Bash(Sort-Object -Property Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\OneDrive\\\\OneDrive - mehmetakif.edu.tr\\\\react-web\" -Force | Select-Object Name, @{Name=\"Size\";Expression={if\\($_.PSIsContainer\\){\"[DIR]\"} else {$_.Length}}}, LastWriteTime | Format-Table -AutoSize)"
     ]
   }
 }

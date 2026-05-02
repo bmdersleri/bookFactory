@@ -1,5 +1,6 @@
 let project = null;
 let manifestData = {};
+let controlPanel = null;
 let activeJobId = null;
 let jobTimer = null;
 
@@ -29,9 +30,10 @@ async function api(path, opts={}) {
   return res.json();
 }
 
-function showTab(name) {
+function showTab(name, updateHash=true) {
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('visible', p.id === name));
+  if (updateHash) history.replaceState(null, '', '#' + name);
 }
 
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
@@ -112,8 +114,10 @@ async function loadProject() {
   try {
     setStatus('Kitap projesi yükleniyor...');
     project = await api('/api/project?root=' + encodeURIComponent(root()));
+    controlPanel = await api('/api/control-panel?root=' + encodeURIComponent(root()));
     manifestData = structuredClone(project.manifest || {});
     renderDashboard();
+    renderControlPanel();
     renderChapters();
     renderManifestForm();
     renderReports(project.reports || []);
@@ -131,6 +135,80 @@ async function loadProject() {
     }
   } catch (e) {
     setStatus('Hata: ' + e.message, 'bad');
+  }
+}
+
+function statusLabel(status) {
+  if (status === 'ok') return '<span class="file-ok">OK</span>';
+  if (status === 'fail') return '<span class="file-missing">FAIL</span>';
+  return '<span class="warn">WARN</span>';
+}
+
+function boolMark(value) {
+  return value ? '<span class="file-ok">Var</span>' : '<span class="file-missing">Yok</span>';
+}
+
+function renderControlPanel() {
+  const data = controlPanel || {};
+  const health = data.health || {};
+  const checks = health.checks || [];
+  $('healthPanel').innerHTML = checks.length ? checks.map(x => (
+    `<div class="item">${statusLabel(x.status)} <strong>${escapeHtml(x.name)}</strong><br><small>${escapeHtml(x.detail || '')}</small></div>`
+  )).join('') : '<div class="item">Sağlık verisi yok.</div>';
+
+  const summary = data.code_tests?.summary || {total: 0, passed: 0, failed: 0, skipped: 0};
+  const failed = data.code_tests?.failed || [];
+  $('codeTestPanel').innerHTML =
+    `<div class="item"><strong>Total:</strong> ${summary.total || 0} · <span class="file-ok">Passed:</span> ${summary.passed || 0} · <span class="file-missing">Failed:</span> ${summary.failed || 0} · Skipped: ${summary.skipped || 0}</div>` +
+    (failed.length ? failed.slice(0, 6).map(x => `<div class="item"><strong>${escapeHtml(x.id)}</strong><br><small>${escapeHtml(x.chapter_id)} · ${escapeHtml(x.language)} · ${escapeHtml(x.file)}</small></div>`).join('') : '<div class="item">Başarısız kod testi yok.</div>');
+
+  const matrix = data.chapter_matrix || [];
+  const tbody = document.querySelector('#chapterMatrixTable tbody');
+  tbody.innerHTML = matrix.length ? matrix.map(row => {
+    const tests = row.code_tests || {};
+    const shots = row.screenshots || {};
+    const screenshotText = `${(shots.markers || []).length} marker / ${(shots.missing_files || []).length} eksik`;
+    return `<tr>
+      <td>${row.order}</td>
+      <td><code>${escapeHtml(row.id)}</code><br><small>${escapeHtml(row.title || '')}</small></td>
+      <td>${escapeHtml(row.status || '')}</td>
+      <td>${boolMark(row.full_text)}</td>
+      <td>${row.quality_report ? `<span class="file-ok">Rapor var</span><br><small>${escapeHtml(row.quality_report)}</small>` : '<span class="file-missing">Rapor yok</span>'}</td>
+      <td>${row.code_blocks || 0} blok<br><small>${tests.passed || 0} geçti / ${tests.failed || 0} hata</small></td>
+      <td>${escapeHtml(screenshotText)}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7">Bölüm matrisi yok.</td></tr>';
+
+  const screenshots = data.screenshots?.items || [];
+  $('screenshotPanel').innerHTML = screenshots.length ? screenshots.slice(0, 12).map(x => (
+    `<div class="item"><strong>${escapeHtml(x.chapter_id)}</strong> · ${escapeHtml(x.severity)}<br><small>${escapeHtml(x.message)}${x.route ? ' · rota: ' + escapeHtml(x.route) : ''}</small></div>`
+  )).join('') : '<div class="item">Screenshot eksiği görünmüyor.</div>';
+
+  const exports = data.exports?.files || [];
+  $('exportPanel').innerHTML = exports.length ? exports.map(x => (
+    `<div class="item"><strong>${escapeHtml(x.format.toUpperCase())}</strong> ${escapeHtml(x.path)}<br><small>${x.size} bayt · ${escapeHtml(x.modified)}</small></div>`
+  )).join('') : '<div class="item">Export çıktısı yok.</div>';
+
+  const prompts = data.repair?.prompts || [];
+  $('repairPanel').innerHTML = prompts.length ? prompts.map(x => (
+    `<button data-repair="${escapeHtml(x.id)}"><strong>${escapeHtml(x.id)}</strong><br><small>${escapeHtml(x.chapter_id)} · ${escapeHtml(x.language)} · ${escapeHtml(x.file)}</small></button>`
+  )).join('') : '<div class="item">Repair promptu gerektiren başarısız kod yok.</div>';
+  document.querySelectorAll('#repairPanel button').forEach(btn => btn.addEventListener('click', () => {
+    const item = prompts.find(x => x.id === btn.dataset.repair);
+    if (!item) return;
+    $('reportContent').textContent = item.prompt;
+    showTab('reports');
+    setStatus('Repair promptu Raporlar panelinde gösterildi.', 'good');
+  }));
+}
+
+async function refreshControlPanel() {
+  try {
+    controlPanel = await api('/api/control-panel?root=' + encodeURIComponent(root()));
+    renderControlPanel();
+    setStatus('Kontrol paneli yenilendi.', 'good');
+  } catch (e) {
+    setStatus('Kontrol paneli yenilenemedi: ' + e.message, 'bad');
   }
 }
 
@@ -373,6 +451,7 @@ async function saveManifestFromForm() {
     $('manifestYaml').value = data.yaml || $('manifestYaml').value;
     renderValidation(data.validation);
     project = await api('/api/project?root=' + encodeURIComponent(root()));
+    await refreshControlPanel();
     renderDashboard(); renderChapters(); renderManifestForm();
     setStatus('Manifest formdan güvenli biçimde kaydedildi: ' + data.path, 'good');
   } catch (e) {
@@ -387,6 +466,7 @@ async function saveManifestYaml() {
     manifestData = structuredClone(data.manifest || {});
     renderValidation(data.validation);
     project = await api('/api/project?root=' + encodeURIComponent(root()));
+    await refreshControlPanel();
     renderDashboard(); renderChapters(); renderManifestForm();
     setStatus('YAML güvenli biçimde kaydedildi: ' + data.path, 'good');
   } catch (e) { setStatus('Kaydedilmedi: ' + e.message, 'bad'); }
@@ -426,6 +506,7 @@ async function matchChapterFiles() {
       manifestData = structuredClone(saveData.manifest || data.manifest);
       $('manifestYaml').value = saveData.yaml || $('manifestYaml').value;
       project = await api('/api/project?root=' + encodeURIComponent(root()));
+      await refreshControlPanel();
       renderDashboard(); renderChapters(); renderManifestForm();
       setStatus(
         `${data.changes?.length || 0} güncelleme: ${fileUpdates} dosya adı, ${statUpdates} durum düzeltildi. Manifest kaydedildi.` +
@@ -494,6 +575,7 @@ async function initProject() {
     const data = await api('/api/project/init', {method: 'POST', body: JSON.stringify({root: root(), manifest})});
     project = data;
     manifestData = structuredClone(data.manifest || manifest);
+    await refreshControlPanel();
     renderDashboard(); renderChapters(); renderManifestForm(); await refreshManifest(false);
     setStatus('Klasör yapısı oluşturuldu ve manifest yazıldı.', 'good');
   } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
@@ -596,6 +678,9 @@ $('importChapter').addEventListener('click', importChapter);
 $('runStep').addEventListener('click', () => startJob($('pipelineStep').value));
 $('runFull').addEventListener('click', () => startJob('full_production'));
 $('refreshReports').addEventListener('click', refreshReports);
+$('refreshControlPanel').addEventListener('click', refreshControlPanel);
 ['mBookTitle','mBookAuthor','mBookYear','mPrimaryLanguage','mPathChapters','mPathChapterPrompts','mPathBuild','mPathAssets','mPathExports'].forEach(id => $(id).addEventListener('input', markInvalidInputs));
 
+const initialTab = window.location.hash.replace('#', '');
+if (initialTab && document.getElementById(initialTab)) showTab(initialTab, false);
 initStudio();

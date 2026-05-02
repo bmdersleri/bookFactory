@@ -27,6 +27,7 @@
   <main class="layout">
     <nav class="sidebar">
       <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="control">Kontrol Paneli</button>
       <button class="tab" data-tab="wizard">Kitap Sihirbazı</button>
       <button class="tab" data-tab="manifest">Manifest</button>
       <button class="tab" data-tab="chapters">Bölümler</button>
@@ -50,6 +51,53 @@
         <div id="bookRootWarning" class="notice hidden"></div>
         <h3>Son Raporlar</h3>
         <div id="recentReports" class="list"></div>
+      </section>
+
+      <section id="control" class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Üretim Kontrol Paneli</h2>
+            <p>Manifest, bölüm, kod testi, screenshot ve export durumunu tek görünümde izler.</p>
+          </div>
+          <div class="toolbar compact">
+            <button id="refreshControlPanel" class="secondary">Paneli Yenile</button>
+          </div>
+        </div>
+
+        <div class="control-grid">
+          <section class="control-block">
+            <h3>Proje Sağlığı</h3>
+            <div id="healthPanel" class="list"></div>
+          </section>
+
+          <section class="control-block">
+            <h3>Kod Testleri</h3>
+            <div id="codeTestPanel" class="list"></div>
+          </section>
+
+          <section class="control-block wide">
+            <h3>Bölüm Durum Matrisi</h3>
+            <table id="chapterMatrixTable">
+              <thead><tr><th>#</th><th>Bölüm</th><th>Durum</th><th>Taslak</th><th>Kalite</th><th>Kod</th><th>Screenshot</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+
+          <section class="control-block">
+            <h3>Görsel/Screenshot</h3>
+            <div id="screenshotPanel" class="list"></div>
+          </section>
+
+          <section class="control-block">
+            <h3>Export Geçmişi</h3>
+            <div id="exportPanel" class="list"></div>
+          </section>
+
+          <section class="control-block wide">
+            <h3>LLM Repair Paneli</h3>
+            <div id="repairPanel" class="list"></div>
+          </section>
+        </div>
       </section>
 
       <section id="wizard" class="panel">

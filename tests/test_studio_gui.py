@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from pathlib import Path
 
 from bookfactory_studio import app as studio_app
@@ -174,6 +175,7 @@ def test_studio_static_frontend_references_existing_api_routes() -> None:
     for path in [
         "/api/studio/config",
         "/api/project",
+        "/api/control-panel",
         "/api/manifest",
         "/api/manifest/validate",
         "/api/manifest/render-yaml",
@@ -191,6 +193,88 @@ def test_studio_static_frontend_references_existing_api_routes() -> None:
     ]:
         assert path in app_js
         assert path in route_paths
+
+
+def test_studio_control_panel_snapshot_reads_production_artifacts() -> None:
+    tmp_path = ROOT / "build" / "pytest-workspaces" / "studio-control-panel"
+    if tmp_path.exists():
+        shutil.rmtree(tmp_path)
+    tmp_path.mkdir(parents=True)
+    try:
+        manifest = """
+book:
+  title: Kontrol Paneli Kitabı
+  author: BookFactory
+language:
+  primary_language: tr
+structure:
+  chapters:
+    - id: chapter_01
+      title: Giriş
+      file: chapter_01_giris.md
+      status: draft
+      screenshot_plan:
+        - id: b01_01_home
+          route: /home
+quality_gates:
+  require_screenshot_plan: true
+"""
+        (tmp_path / "book_manifest.yaml").write_text(manifest, encoding="utf-8")
+        (tmp_path / "chapters").mkdir()
+        (tmp_path / "chapters" / "chapter_01_giris.md").write_text(
+            "# Giriş\n\n[SCREENSHOT:b01_01_home]\n",
+            encoding="utf-8",
+        )
+        report_dir = tmp_path / "build" / "test_reports"
+        report_dir.mkdir(parents=True)
+        (report_dir / "code_test_report.json").write_text(
+            json.dumps(
+                {
+                    "summary": {"total": 1, "passed": 0, "failed": 1, "skipped": 0},
+                    "results": [
+                        {
+                            "id": "chapter_01_code01",
+                            "chapter_id": "chapter_01",
+                            "language": "python",
+                            "file": "demo.py",
+                            "status": "failed",
+                            "steps": [{"returncode": 1, "stderr": "SyntaxError"}],
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        code_dir = tmp_path / "build"
+        (code_dir / "code_manifest.json").write_text(
+            json.dumps(
+                {
+                    "items": [
+                        {
+                            "id": "chapter_01_code01",
+                            "chapter_id": "chapter_01",
+                            "language": "python",
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        export_dir = tmp_path / "exports" / "docx"
+        export_dir.mkdir(parents=True)
+        (export_dir / "book.docx").write_bytes(b"docx")
+
+        panel = studio_app.control_panel(str(tmp_path))
+
+        assert panel["health"]["checks"][0]["name"] == "Manifest"
+        assert panel["chapter_matrix"][0]["id"] == "chapter_01"
+        assert panel["chapter_matrix"][0]["code_blocks"] == 1
+        assert panel["chapter_matrix"][0]["code_tests"]["failed"] == 1
+        assert panel["screenshots"]["missing_count"] == 1
+        assert panel["exports"]["files"][0]["format"] == "docx"
+        assert "SyntaxError" in panel["repair"]["prompts"][0]["prompt"]
+    finally:
+        shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 def test_studio_frontend_has_required_dom_ids() -> None:

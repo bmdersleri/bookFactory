@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .core import (
+    control_panel_snapshot,
     dump_yaml,
     find_manifest,
     framework_root,
@@ -132,6 +133,14 @@ def post_studio_config(req: StudioConfigRequest) -> dict[str, Any]:
 def get_project(root: str = Query(".")) -> dict[str, Any]:
     try:
         return project_snapshot(project_root(root))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/control-panel")
+def control_panel(root: str = Query(".")) -> dict[str, Any]:
+    try:
+        return control_panel_snapshot(project_root(root))
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

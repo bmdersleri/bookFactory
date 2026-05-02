@@ -374,7 +374,8 @@ approval_gates:
   full_text_generation: "required"
   post_production_build: "optional"
 
-chapters: []
+structure:
+  chapters: []
 
 appendices: []
 
