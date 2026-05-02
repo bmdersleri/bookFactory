@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from tools.utils.yaml_utils import load_yaml, write_yaml
+from tools.utils.yaml_utils import load_yaml, dump_yaml
 
 def generate_mkdocs_config(manifest: dict[str, Any], docs_dir: str) -> dict[str, Any]:
     book = manifest.get("book", {})
@@ -118,7 +118,7 @@ Bu web sitesi, kitabın dijital ikizi (Digital Twin) olarak BookFactory tarafın
     
     # 6. Generate mkdocs.yml
     mkdocs_cfg = generate_mkdocs_config(manifest, "docs")
-    write_yaml(out_dir / "mkdocs.yml", mkdocs_cfg)
+    dump_yaml(mkdocs_cfg, out_dir / "mkdocs.yml")
     
     print(f"Success: Web site source generated in {out_dir}")
     print(f"Run 'mkdocs serve' in {out_dir} to preview or 'mkdocs build' to generate static HTML.")

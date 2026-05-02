@@ -7,7 +7,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -156,6 +156,31 @@ def match_manifest_chapter_files(req: ManifestRequest) -> dict[str, Any]:
     except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.get("/api/chapters/read/{chapter_id}")
+def read_chapter(chapter_id: str, root: str = Query(".")) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        file_path = r / "chapters" / f"{chapter_id}.md"
+        if not file_path.exists():
+            return {"content": ""}
+        return {"content": file_path.read_text(encoding="utf-8")}
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/chapters/save")
+def save_chapter_api(req: dict = Body(...)) -> dict[str, Any]:
+    try:
+        root = req.get("root", ".")
+        chapter_id = req.get("chapter_id")
+        content = req.get("content")
+        r = PathService.project_root(root)
+        file_path = r / "chapters" / f"{chapter_id}.md"
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content, encoding="utf-8")
+        return {"status": "success"}
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @app.post("/api/manifest/render-yaml")
 def render_manifest_yaml(req: ManifestRequest) -> dict[str, Any]:
     try:
@@ -201,6 +226,15 @@ def save_manifest_yaml(req: ManifestYamlRequest) -> dict[str, Any]:
         write_yaml(path, manifest)
         return {"ok": True, "path": str(path), "validation": validation, "manifest": manifest, "yaml": dump_yaml(manifest)}
     except HTTPException: raise
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/reports")
+def list_reports_api(root: str = Query(".")) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        from .services.health_service import HealthService
+        return {"reports": HealthService.list_reports(r)}
     except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
@@ -293,7 +327,30 @@ def editor_review(chapter_id: str, root: str = Query(".")) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+from fastapi import UploadFile, File
 from .services.cloud_service import CloudService
+from .services.asset_service import AssetService
+
+
+@app.get("/api/assets")
+def list_assets(root: str = Query(".")) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        return {"assets": AssetService.list_assets(r)}
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/assets/upload")
+async def upload_assets(root: str = Query("."), files: list[UploadFile] = File(...)) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        saved = []
+        for file in files:
+            content = await file.read()
+            rel_path = AssetService.save_asset(r, file.filename, content)
+            saved.append(rel_path)
+        return {"status": "success", "files": saved}
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/cloud/status")

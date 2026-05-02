@@ -32,6 +32,13 @@ def run(cmd: list[str], cwd: Path | None = None, env: dict | None = None, dry_ru
     if dry_run: return 0
     merged_env = os.environ.copy()
     if env: merged_env.update(env)
+    
+    # Ensure PYTHONPATH includes current working directory if running in repo context
+    current_python_path = merged_env.get("PYTHONPATH", "")
+    repo_path = str(repo_root())
+    if repo_path not in current_python_path:
+        merged_env["PYTHONPATH"] = f"{repo_path}{os.pathsep}{current_python_path}" if current_python_path else repo_path
+
     return subprocess.run(cmd, cwd=str(cwd) if cwd else None, env=merged_env).returncode
 
 def repo_root() -> Path:

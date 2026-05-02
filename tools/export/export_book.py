@@ -49,8 +49,8 @@ def profile_base(profile_path: Path, profile: dict[str, Any]) -> Path:
     project_root = profile.get("project_root") or profile.get("post_production", {}).get("project_root")
     if project_root:
         p = Path(project_root)
-        return p.resolve() if p.is_absolute() else (Path.cwd() / p).resolve()
-    return Path.cwd()
+        return p.resolve() if p.is_absolute() else (profile_path.parent / p).resolve()
+    return profile_path.parent
 
 
 def resolve(base: Path, value: str | None) -> Path | None:

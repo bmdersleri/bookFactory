@@ -1,0 +1,9 @@
+# BookFactory Bağlantı Dosyası
+# Bu dosya, kitap projesinin hangi BookFactory sürümünü
+# kullandığını ve framework konumunu tanımlar.
+
+framework_version: "v3.4.0"
+framework_path: "../bookFactory"
+created: "2026-05-02"
+book_title: "Git ve GitHub ile Modern Versiyon Kontrolü"
+primary_language: "tr"

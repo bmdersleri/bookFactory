@@ -1,0 +1,16 @@
+# Build çıktıları
+build/
+dist/
+
+# Otomatik üretilen görseller (QR, PNG)
+assets/auto/
+
+# Geçici dosyalar
+*.bak
+*.tmp
+*.old
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+.env

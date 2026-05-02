@@ -14,10 +14,21 @@ const escapeHtml = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
 const lines = (s) => (s || '').split('\n').map(l => l.trim()).filter(l => l);
 
 async function api(path, options = {}) {
+  if (options.body && !options.headers) {
+    options.headers = { 'Content-Type': 'application/json' };
+  }
   const res = await fetch(path, options);
   if (!res.ok) {
-    const err = await res.json().catch(() => ({detail: res.statusText}));
-    throw new Error(err.detail || res.statusText);
+    let msg = res.statusText;
+    try {
+      const err = await res.json();
+      if (err.detail) {
+        if (typeof err.detail === 'string') msg = err.detail;
+        else if (Array.isArray(err.detail)) msg = err.detail.map(d => `${d.loc.join('.')}: ${d.msg}`).join(', ');
+        else msg = JSON.stringify(err.detail);
+      }
+    } catch (e) {}
+    throw new Error(msg);
   }
   return res.json();
 }
@@ -238,6 +249,37 @@ function renderManifestForm() {
   renderGlossaryRows(); renderManifestChapterRows(); renderResourceRows();
 }
 
+function renderChapters() {
+  const chapters = manifestData?.structure?.chapters || [];
+  const tbody = $('chapterTable').querySelector('tbody');
+  if (tbody) {
+    tbody.innerHTML = chapters.map((ch, idx) => `<tr><td>${idx+1}</td><td><code>${ch.id}</code></td><td>${ch.title}</td><td>${ch.status}</td><td><button class="smallbtn" onclick="loadChapter('${ch.id}')">Düzenle</button></td></tr>`).join('');
+  }
+}
+
+async function loadChapter(cid) {
+  try {
+    const res = await api(`/api/chapters/read/${cid}?root=${encodeURIComponent($('projectRoot').value)}`);
+    $('importChapterId').value = cid;
+    $('chapterContent').value = res.content;
+    updateMarkdownPreview();
+    showTab('chapters');
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
+async function saveChapter() {
+  try {
+    const cid = $('importChapterId').value.trim();
+    if (!cid) return setStatus('Bölüm ID eksik.', 'bad');
+    await api('/api/chapters/save', {
+      method: 'POST',
+      body: JSON.stringify({ root: $('projectRoot').value, chapter_id: cid, content: $('chapterContent').value })
+    });
+    setStatus('Bölüm kaydedildi.', 'good');
+    await loadProject();
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
 function renderManifestChapterRows() {
   const chapters = manifestData.structure?.chapters || [];
   const tbody = $('manifestChapterRows'); if (!tbody) return;
@@ -264,19 +306,134 @@ function renderGlossaryRows() {
 
 function addGlossaryRow() { if (!manifestData.glossary) manifestData.glossary = []; manifestData.glossary.push({term: 'Yeni', definition: ''}); renderGlossaryRows(); }
 function removeGlossaryRow(idx) { manifestData.glossary.splice(idx, 1); renderGlossaryRows(); }
+function addChapterRow() { 
+  if (!manifestData.structure) manifestData.structure = { chapters: [] };
+  if (!manifestData.structure.chapters) manifestData.structure.chapters = [];
+  const n = manifestData.structure.chapters.length + 1;
+  const id = `chapter_${n.toString().padStart(2, '0')}`;
+  manifestData.structure.chapters.push({id, title: 'Yeni Bölüm', file: `${id}.md`, status: 'planned'}); 
+  renderManifestChapterRows(); 
+}
 function removeChapterRow(idx) { manifestData.structure.chapters.splice(idx, 1); renderManifestChapterRows(); }
+
+function renumberChapters() {
+  if (!manifestData.structure?.chapters) return;
+  manifestData.structure.chapters.forEach((ch, idx) => {
+    const n = idx + 1;
+    const id = `chapter_${n.toString().padStart(2, '0')}`;
+    ch.id = id;
+    ch.file = `${id}.md`;
+  });
+  renderManifestChapterRows();
+  showToast('Bölümler yeniden numaralandırıldı.');
+}
+
+async function matchChapterFiles() {
+  try {
+    const res = await api('/api/manifest/match-chapter-files', {
+      method: 'POST',
+      body: JSON.stringify({ root: $('projectRoot').value, manifest: manifestData })
+    });
+    manifestData = res.manifest;
+    renderManifestChapterRows();
+    showToast('Dosyalar eşleştirildi.');
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
 
 async function saveManifestForm() {
   const m = structuredClone(manifestData);
-  m.book.title = $('mBookTitle').value; m.book.author = $('mBookAuthor').value;
-  m.academic = { course_code: $('mCourseCode').value, course_name: $('mCourseName').value };
-  m.authoring = { complexity_level: $('mComplexity').value, industrial_context: $('mContext').value, coding_conventions: { variable_naming: $('mNaming').value, type_hinting: $('mHinting').value }, math_rigor: $('mMath').value };
+  m.book = {
+    title: $('mBookTitle').value,
+    subtitle: $('mBookSubtitle').value,
+    author: $('mBookAuthor').value,
+    edition: $('mBookEdition').value,
+    year: parseInt($('mBookYear').value) || new Date().getFullYear(),
+    framework_version: $('mFrameworkVersion').value
+  };
   
+  m.language = {
+    primary: $('mPrimaryLanguage').value,
+    output_languages: $('mOutputLanguages').value.split(',').map(s => s.trim()).filter(s => s),
+    style_profile: $('mStyleProfile').value,
+    pedagogical_model: $('mPedagogicalModel').value
+  };
+
+  m.cumulative_app = {
+    name: $('mAppName').value,
+    description: $('mAppDescription').value
+  };
+
+  m.academic = { 
+    course_code: $('mCourseCode').value, 
+    course_name: $('mCourseName').value,
+    ects: parseInt($('mEcts').value) || 5,
+    learning_outcomes: lines($('mLearningOutcomes').value)
+  };
+
+  m.authoring = { 
+    complexity_level: $('mComplexity').value, 
+    industrial_context: $('mContext').value, 
+    math_rigor: $('mMath').value,
+    coding_conventions: { 
+      variable_naming: $('mNaming').value, 
+      type_hinting: $('mHinting').value 
+    }
+  };
+
+  m.automation = {
+    project_status: $('mProjectStatus').value,
+    code_extract: $('mCodeExtract').checked,
+    code_test: $('mCodeTest').checked,
+    github_sync: $('mGithubSync').checked,
+    qr_generation: $('mQrGeneration').checked,
+    screenshot_automation: $('mScreenshotAutomation').checked,
+    mermaid_generation: $('mMermaidGeneration').checked,
+    manual_asset_override: $('mManualOverride').checked,
+    qr_threshold: parseInt($('mQrThreshold').value) || 15
+  };
+
+  m.paths = {
+    chapters: $('mPathChapters').value,
+    chapter_prompts: $('mPathChapterPrompts').value,
+    chapter_backups: $('mPathChapterBackups').value,
+    build: $('mPathBuild').value,
+    assets: $('mPathAssets').value,
+    exports: $('mPathExports').value
+  };
+
+  m.scope = {
+    stack: lines($('mScopeStack').value),
+    out_of_scope: lines($('mOutOfScope').value)
+  };
+  
+  // Sync chapters from table
+  if (!m.structure) m.structure = { chapters: [] };
+  m.structure.chapters = [];
+  document.querySelectorAll('#manifestChapterRows tr').forEach(tr => {
+    const id = tr.querySelector('.c-id').value.trim();
+    if (id) m.structure.chapters.push({ 
+      id, 
+      title: tr.querySelector('.c-title').value.trim(), 
+      file: tr.querySelector('.c-file').value.trim(), 
+      status: tr.querySelector('.c-status').value 
+    });
+  });
+
   // Sync resources from table
   m.resources = [];
   document.querySelectorAll('#manifestResourceRows tr').forEach(tr => {
     const id = tr.querySelector('.r-id').value.trim();
     if (id) m.resources.push({ id, title: tr.querySelector('.r-title').value.trim(), path: tr.querySelector('.r-path').value.trim(), type: tr.querySelector('.r-type').value });
+  });
+
+  // Sync glossary from table
+  m.glossary = [];
+  document.querySelectorAll('#manifestGlossaryRows tr').forEach(tr => {
+    const termInput = tr.querySelector('.g-term');
+    const defInput = tr.querySelector('.g-def');
+    if (termInput && termInput.value.trim()) {
+      m.glossary.push({ term: termInput.value.trim(), definition: defInput ? defInput.value.trim() : '' });
+    }
   });
 
   await api('/api/manifest/save', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, manifest: m }) });
@@ -313,34 +470,280 @@ async function provisionCloud() {
 
 async function copyMarkdownLink(path, name) { await navigator.clipboard.writeText(`![${name.split('.')[0]}](../${path})`); showToast('Link kopyalandı.'); }
 
-// Global Init
-$('loadProject').addEventListener('click', loadProject);
-$('toggleDarkMode').addEventListener('click', () => { localStorage.setItem('darkMode', document.body.classList.toggle('dark-mode')); });
-if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
-$('chapterContent').addEventListener('input', updateMarkdownPreview);
-$('addGlossaryTerm').addEventListener('click', addGlossaryRow);
-$('addResource').addEventListener('click', addResourceRow);
-$('saveManifestForm').addEventListener('click', saveManifestForm);
-$('refreshCloudStatus').addEventListener('click', refreshCloudStatus);
-$('provisionCloud').addEventListener('click', provisionCloud);
-$('closeDebug').addEventListener('click', () => $('debugModal').classList.add('hidden'));
-$('saveAndTestCode').addEventListener('click', saveAndTestCode);
-$('insertMetaBlock').addEventListener('click', () => {
-  const id = $('mwId').value.trim() || 'code_01', lang = $('mwLang').value, file = $('mwFile').value.trim(), test = $('mwTest').value;
-  const shot = $('mwScreenshot').checked ? `\ncaptures_screenshot: "${$('mwScreenshotId').value.trim() || id}"` : '';
-  const sandbox = $('mwSandbox').checked ? `\nsandbox_link: true` : '';
-  const group = $('mwGroupId').value.trim() ? `\ngroup_id: "${$('mwGroupId').value.trim()}"` : '';
-  const compare = $('mwCompare').value.trim() ? `\ncompare_with: "${$('mwCompare').value.trim()}"` : '';
-  const block = `\n<!-- CODE_META\nid: ${id}\nchapter_id: ${$('importChapterId').value || 'chapter_XX'}\nlanguage: ${lang}\nfile: ${file}\ntest: ${test}${shot}${sandbox}${group}${compare}\n-->\n\n\`\`\`${lang}\n\n\`\`\`\n`;
-  $('chapterContent').value += block; $('metaWizardModal').classList.add('hidden'); updateMarkdownPreview();
-});
-$('closeMetaWizard').addEventListener('click', () => $('metaWizardModal').classList.add('hidden'));
-$('mwScreenshot').addEventListener('change', (e) => $('mwScreenshotIdBox').classList.toggle('hidden', !e.target.checked));
-$('runStep').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: $('pipelineStep').value, options: JSON.parse($('jobOptions').value || '{}') }) }).then(j => pollJob(j.id)); });
-$('runFull').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: 'full_production', options: {}}) }).then(j => pollJob(j.id)); });
-$('runWebSite').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({root: $('projectRoot').value, step: 'generate-web-site', options: {}}) }).then(j => pollJob(j.id)); });
-window.addEventListener('keydown', (e) => { if (e.altKey && e.key >= '1' && e.key <= '9') showTab(['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports', 'cloud', 'media'][parseInt(e.key)-1]); });
-async function loadPipelineSteps() { const data = await api('/api/pipeline/steps'); $('pipelineStep').innerHTML = data.steps.map(s => `<option value="${s.id}">${s.title}</option>`).join(''); }
+async function saveManifestYaml() {
+  try {
+    const yaml_text = $('manifestYaml').value;
+    await api('/api/manifest/save-yaml', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, yaml_text }) });
+    setStatus('YAML kaydedildi.', 'good');
+    await loadProject();
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
 
-loadProject();
-loadPipelineSteps();
+async function refreshControlPanel() {
+  try {
+    controlPanel = await api('/api/control-panel?root=' + encodeURIComponent($('projectRoot').value));
+    renderControlPanel();
+    setStatus('Panel yenilendi.', 'good');
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
+async function refreshReports() {
+  try {
+    const data = await api('/api/reports?root=' + encodeURIComponent($('projectRoot').value));
+    $('reportList').innerHTML = data.reports.map(r => `<div class="item" onclick="loadReport('${r.path}')">${r.name} <small>${r.date}</small></div>`).join('');
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
+async function loadReport(path) {
+  const res = await api(`/api/project/file?path=${encodeURIComponent(path)}&root=${encodeURIComponent($('projectRoot').value)}`);
+  $('reportContent').textContent = typeof res === 'string' ? res : JSON.stringify(res, null, 2);
+}
+
+async function initProject() {
+  try {
+    const data = {
+      title: $('wTitle').value,
+      subtitle: $('wSubtitle').value,
+      author: $('wAuthor').value,
+      year: $('wYear').value,
+      subject: $('wSubject').value,
+      audience: $('wAudience').value,
+      prerequisites: $('wPrereq').value,
+      chapter_count: parseInt($('wChapterCount').value),
+      app_name: $('wAppName').value,
+      app_description: $('wAppDesc').value,
+      stack: $('wStack').value
+    };
+    setStatus('Proje başlatılıyor...', 'warn');
+    const res = await api('/api/wizard/init-project', {
+      method: 'POST',
+      body: JSON.stringify({ root: $('projectRoot').value, data })
+    });
+    setStatus('Proje başarıyla oluşturuldu: ' + res.path, 'good');
+    await loadProject();
+    showTab('dashboard');
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
+async function makeArchitecturePrompt() {
+  try {
+    const data = {
+      book: {
+        title: $('wTitle').value,
+        subtitle: $('wSubtitle').value,
+        author: $('wAuthor').value,
+        year: $('wYear').value
+      },
+      subject: $('wSubject').value,
+      audience: $('wAudience').value,
+      prerequisites: $('wPrereq').value,
+      chapter_count: parseInt($('wChapterCount').value),
+      cumulative_app: {
+        name: $('wAppName').value,
+        description: $('wAppDesc').value
+      },
+      scope: {
+        stack: lines($('wStack').value),
+        out_of_scope: lines($('wOutScope').value)
+      }
+    };
+    const res = await api('/api/wizard/architecture-prompt', {
+      method: 'POST',
+      body: JSON.stringify({
+        root: $('projectRoot').value,
+        data: data,
+        save: false,
+        use_rag: $('useRagToggle').checked,
+        rag_query: $('ragQueryInput').value
+      })
+    });
+    $('architecturePrompt').value = res.prompt;
+    showToast('Mimari prompt üretildi.');
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
+
+async function validateManifest() {
+  try {
+    const res = await api('/api/manifest/validate', {
+      method: 'POST',
+      body: JSON.stringify({ root: $('projectRoot').value, manifest: manifestData })
+    });
+    const box = $('manifestValidationBox');
+    box.className = 'validation-box ' + (res.valid ? 'good' : 'bad');
+    box.innerHTML = res.valid ? '✅ Manifest geçerli.' : `❌ Hatalar: <br>${res.errors.join('<br>')}`;
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
+let currentWizardStep = 1;
+
+function showWizardStep(n) {
+  currentWizardStep = n;
+  document.querySelectorAll('.wizard-panel').forEach((p, i) => p.classList.toggle('visible', i === n - 1));
+  document.querySelectorAll('.wizard-step-indicator').forEach((s, i) => s.classList.toggle('active', i === n - 1));
+  $('prevStep').classList.toggle('hidden', n === 1);
+  $('nextStep').classList.toggle('hidden', n === 3);
+  $('finishWizard').classList.toggle('hidden', n !== 3);
+  if (n === 3) {
+    $('wizardSummary').innerHTML = `
+      <div class="item"><strong>Proje:</strong> ${$('iwName').value}</div>
+      <div class="item"><strong>Başlık:</strong> ${$('iwTitle').value}</div>
+      <div class="item"><strong>Yazar:</strong> ${$('iwAuthor').value}</div>
+      <div class="item"><strong>Dil:</strong> ${$('iwLang').value}</div>
+    `;
+  }
+}
+
+async function finishWizard() {
+  try {
+    const data = {
+      name: $('iwName').value,
+      title: $('iwTitle').value,
+      author: $('iwAuthor').value,
+      lang: $('iwLang').value,
+      options: { docx: $('iwOutDocx').checked, pdf: $('iwOutPdf').checked }
+    };
+    const res = await api('/api/project/init', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, manifest: data }) });
+    setStatus('Proje oluşturuldu: ' + res.path, 'good');
+    $('initWizardModal').classList.add('hidden');
+    await loadProject();
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
+async function uploadFiles(files) {
+  const formData = new FormData();
+  for (let f of files) formData.append('files', f);
+  try {
+    setStatus('Yükleniyor...', 'warn');
+    await fetch('/api/assets/upload?root=' + encodeURIComponent($('projectRoot').value), { method: 'POST', body: formData });
+    setStatus('Yüklendi.', 'good');
+    await refreshMedia();
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+}
+
+function initDropZone() {
+  const dz = $('dropZone'); if (!dz) return;
+  dz.onclick = () => $('mediaUploadInput').click();
+  dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('dragover'); };
+  dz.ondragleave = () => dz.classList.remove('dragover');
+  dz.ondrop = (e) => { e.preventDefault(); dz.classList.remove('dragover'); uploadFiles(e.dataTransfer.files); };
+  $('mediaUploadInput').onchange = (e) => uploadFiles(e.target.files);
+}
+
+async function loadConfig() {
+  try {
+    const cfg = await api('/api/studio/config');
+    $('frameworkRoot').textContent = cfg.framework_root;
+    if (cfg.active_book) $('projectRoot').value = cfg.active_book;
+    $('recentBooksSelect').innerHTML = '<option value="">Son kitaplar...</option>' + cfg.recent_books.map(b => `<option value="${b}">${b.split(/[\\/]/).pop()} (${b})</option>`).join('');
+  } catch (e) { console.error(e); }
+}
+
+// Global Init & Event Listeners
+function initApp() {
+  loadConfig();
+  initDropZone();
+  
+  // 1. Sidebar Tabs (High Priority)
+  document.querySelectorAll('.tab').forEach(b => {
+    b.addEventListener('click', () => showTab(b.dataset.tab));
+  });
+  document.querySelectorAll('.manifest-tab').forEach(b => {
+    b.addEventListener('click', () => showManifestTab(b.dataset.mtab));
+  });
+
+  // 2. Keyboard Shortcuts
+  window.addEventListener('keydown', (e) => {
+    if (e.altKey && e.key >= '1' && e.key <= '9') {
+      const tabs = ['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports', 'cloud', 'media'];
+      const target = tabs[parseInt(e.key) - 1];
+      if (target) showTab(target);
+    }
+  });
+
+  // 3. Project Loading
+  const loadBtn = $('loadProject');
+  if (loadBtn) loadBtn.addEventListener('click', loadProject);
+  
+  const recentSelect = $('recentBooksSelect');
+  if (recentSelect) {
+    recentSelect.addEventListener('change', (e) => {
+      if (e.target.value) {
+        $('projectRoot').value = e.target.value;
+        loadProject();
+      }
+    });
+  }
+
+  // 4. Wizard & Manifest
+  const bind = (id, fn, event = 'click') => { const el = $(id); if (el) el.addEventListener(event, fn); };
+  
+  bind('toggleDarkMode', () => { localStorage.setItem('darkMode', document.body.classList.toggle('dark-mode')); });
+  bind('chapterContent', updateMarkdownPreview, 'input');
+  bind('addGlossaryTerm', addGlossaryRow);
+  bind('addResource', addResourceRow);
+  bind('addChapter', addChapterRow);
+  bind('renumberChapters', renumberChapters);
+  bind('matchChapterFiles', matchChapterFiles);
+  bind('saveManifestForm', saveManifestForm);
+  bind('validateManifest', validateManifest);
+  bind('initProject', initProject);
+  bind('openInitWizard', () => { currentWizardStep = 1; showWizardStep(1); $('initWizardModal').classList.remove('hidden'); });
+  bind('emptyOpenWizard', () => { currentWizardStep = 1; showWizardStep(1); $('initWizardModal').classList.remove('hidden'); });
+  bind('closeInitWizard', () => $('initWizardModal').classList.add('hidden'));
+  bind('prevStep', () => showWizardStep(currentWizardStep - 1));
+  bind('nextStep', () => showWizardStep(currentWizardStep + 1));
+  bind('finishWizard', finishWizard);
+  
+  bind('emptySelectFolder', () => $('projectRoot').focus());
+  bind('makeArchitecturePrompt', makeArchitecturePrompt);
+  bind('copyArchitecturePrompt', () => {
+    const val = $('architecturePrompt').value;
+    if (val) {
+      navigator.clipboard.writeText(val);
+      showToast('Prompt kopyalandı.');
+    }
+  });
+  
+  // 5. Cloud & Media
+  bind('refreshCloudStatus', refreshCloudStatus);
+  bind('provisionCloud', provisionCloud);
+  bind('closeDebug', () => $('debugModal').classList.add('hidden'));
+  bind('saveAndTestCode', saveAndTestCode);
+  
+  // 6. Chapter & Metadata
+  bind('insertMetaBlock', () => {
+    const id = $('mwId').value.trim() || 'code_01', lang = $('mwLang').value, file = $('mwFile').value.trim(), test = $('mwTest').value;
+    const shot = $('mwScreenshot').checked ? `\ncaptures_screenshot: "${$('mwScreenshotId').value.trim() || id}"` : '';
+    const sandbox = $('mwSandbox').checked ? `\nsandbox_link: true` : '';
+    const group = $('mwGroupId').value.trim() ? `\ngroup_id: "${$('mwGroupId').value.trim()}"` : '';
+    const compare = $('mwCompare').value.trim() ? `\ncompare_with: "${$('mwCompare').value.trim()}"` : '';
+    const block = `\n<!-- CODE_META\nid: ${id}\nchapter_id: ${$('importChapterId').value || 'chapter_XX'}\nlanguage: ${lang}\nfile: ${file}\ntest: ${test}${shot}${sandbox}${group}${compare}\n-->\n\n\`\`\`${lang}\n\n\`\`\`\n`;
+    $('chapterContent').value += block; $('metaWizardModal').classList.add('hidden'); updateMarkdownPreview();
+  });
+  bind('closeMetaWizard', () => $('metaWizardModal').classList.add('hidden'));
+  bind('mwScreenshot', (e) => $('mwScreenshotIdBox').classList.toggle('hidden', !e.target.checked), 'change');
+  bind('useRagToggle', (e) => $('ragQueryContainer').classList.toggle('hidden', !e.target.checked), 'change');
+  
+  // 7. Production & Reports
+  bind('runStep', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: $('pipelineStep').value, options: JSON.parse($('jobOptions').value || '{}') }) }).then(j => pollJob(j.id)); });
+  bind('runFull', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: 'full_production', options: {}}) }).then(j => pollJob(j.id)); });
+  bind('runWebSite', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({root: $('projectRoot').value, step: 'generate-web-site', options: {}}) }).then(j => pollJob(j.id)); });
+  bind('importChapter', saveChapter);
+  bind('refreshChapters', renderChapters);
+  bind('generatePrompts', generateChapterPrompts);
+  bind('refreshControlPanel', refreshControlPanel);
+  bind('refreshReports', refreshReports);
+  bind('saveManifestYaml', saveManifestYaml);
+  bind('refreshManifest', () => refreshManifest(true));
+
+  // 8. Initial States
+  if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+  if (location.hash) showTab(location.hash.substring(1));
+  
+  loadProject();
+  loadPipelineSteps();
+}
+
+// Start
+initApp();

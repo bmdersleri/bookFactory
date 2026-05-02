@@ -1,0 +1,132 @@
+schema_version: "1.0"
+generated_at: "2026-05-02T13:30:30.179598+00:00"
+generator: "tools/code/extract_code_blocks.py"
+item_count: 9
+warnings: "[]"
+items:
+  -
+    id: "check_git_version"
+    chapter_id: "chapter_01"
+    language: "shell"
+    kind: "example"
+    title_key: ""
+    file: "check_git.sh"
+    source_markdown: "chapters/chapter_01.md"
+    code_path: "build/code/chapter_01/check_git_version/check_git.sh"
+    fence_language: "shell"
+    extract: true
+    test: "compile_run"
+    github: false
+    qr: "none"
+  -
+    id: "python_smoke_test"
+    chapter_id: "chapter_01"
+    language: "python"
+    kind: "example"
+    title_key: ""
+    file: "smoke_test.py"
+    source_markdown: "chapters/chapter_01.md"
+    code_path: "build/code/chapter_01/python_smoke_test/smoke_test.py"
+    fence_language: "python"
+    extract: true
+    test: "compile_run"
+    github: false
+    qr: "none"
+  -
+    id: "git_config"
+    chapter_id: "chapter_02"
+    language: "shell"
+    kind: "example"
+    title_key: ""
+    file: "setup_git.sh"
+    source_markdown: "chapters/chapter_02.md"
+    code_path: "build/code/chapter_02/git_config/setup_git.sh"
+    fence_language: "shell"
+    extract: true
+    test: "compile_run"
+    github: false
+    qr: "none"
+  -
+    id: "git_init_example"
+    chapter_id: "chapter_02"
+    language: "shell"
+    kind: "example"
+    title_key: ""
+    file: "init_repo.sh"
+    source_markdown: "chapters/chapter_02.md"
+    code_path: "build/code/chapter_02/git_init_example/init_repo.sh"
+    fence_language: "shell"
+    extract: true
+    test: "compile_run"
+    github: false
+    qr: "none"
+  -
+    id: "git_commit_flow"
+    chapter_id: "chapter_02"
+    language: "shell"
+    kind: "example"
+    title_key: ""
+    file: "first_commit.sh"
+    source_markdown: "chapters/chapter_02.md"
+    code_path: "build/code/chapter_02/git_commit_flow/first_commit.sh"
+    fence_language: "shell"
+    extract: true
+    test: "compile_run"
+    github: false
+    qr: "none"
+  -
+    id: "git_status_check"
+    chapter_id: "chapter_02"
+    language: "shell"
+    kind: "example"
+    title_key: ""
+    file: "status.sh"
+    source_markdown: "chapters/chapter_02.md"
+    code_path: "build/code/chapter_02/git_status_check/status.sh"
+    fence_language: "shell"
+    extract: true
+    test: "compile_run"
+    github: false
+    qr: "none"
+  -
+    id: "git_remote_add"
+    chapter_id: "chapter_03"
+    language: "shell"
+    kind: "example"
+    title_key: ""
+    file: "remote_setup.sh"
+    source_markdown: "chapters/chapter_03.md"
+    code_path: "build/code/chapter_03/git_remote_add/remote_setup.sh"
+    fence_language: "shell"
+    extract: true
+    test: "compile_run"
+    github: false
+    qr: "none"
+  -
+    id: "git_push_main"
+    chapter_id: "chapter_03"
+    language: "shell"
+    kind: "example"
+    title_key: ""
+    file: "push_code.sh"
+    source_markdown: "chapters/chapter_03.md"
+    code_path: "build/code/chapter_03/git_push_main/push_code.sh"
+    fence_language: "shell"
+    extract: true
+    test: "compile_run"
+    github: false
+    qr: "none"
+  -
+    id: "project_meta_test"
+    chapter_id: "chapter_03"
+    language: "python"
+    kind: "example"
+    title_key: ""
+    file: "test_meta.py"
+    source_markdown: "chapters/chapter_03.md"
+    code_path: "build/code/chapter_03/project_meta_test/test_meta.py"
+    fence_language: "python"
+    extract: true
+    test: "pytest"
+    github: false
+    qr: "none"

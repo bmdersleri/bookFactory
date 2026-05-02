@@ -1,0 +1,61 @@
+book:
+  title: "Git ve GitHub ile Modern Versiyon Kontrolü"
+  subtitle: "Sıfırdan Profesyonel İş Akışlarına"
+  author: "Prof. Dr. İsmail KIRBAŞ"
+  year: 2026
+  edition: "1. Baskı"
+  publisher: "Parametric Computer Publishing"
+
+academic:
+  course_code: "CENG202"
+  course_name: "Yazılım Mühendisliği Araçları"
+  department: "Bilgisayar Mühendisliği"
+
+language:
+  primary_language: "tr"
+  output_languages: ["tr"]
+  style_profile: "Academic"
+  pedagogical_model: "Bloom"
+
+authoring:
+  complexity_level: "Intermediate"
+  industrial_context: "Open Source"
+  math_rigor: "Minimal"
+  coding_conventions:
+    variable_naming: "snake_case"
+    type_hinting: "optional"
+
+structure:
+  chapters:
+    - id: chapter_01
+      title: "Versiyon Kontrol Sistemlerine Giriş"
+      file: "chapter_01.md"
+      status: "planned"
+    - id: chapter_02
+      title: "Git Temelleri ve Yerel Depo Yönetimi"
+      file: "chapter_02.md"
+      status: "planned"
+    - id: chapter_03
+      title: "GitHub: Bulut Tabanlı İşbirliği"
+      file: "chapter_03.md"
+      status: "planned"
+    - id: chapter_04
+      title: "Branching ve Merging Stratejileri"
+      file: "chapter_04.md"
+      status: "planned"
+    - id: chapter_05
+      title: "GitHub Actions ile CI/CD Temelleri"
+      file: "chapter_05.md"
+      status: "planned"
+
+resources:
+  - id: sample_repo
+    title: "Örnek GitHub Deposu"
+    path: "https://github.com/bmdersleri/github-kitabi-examples"
+    type: "external_link"
+
+paths:
+  chapters: "chapters"
+  assets: "assets"
+  build: "build"
+  exports: "exports"

@@ -1,0 +1,36 @@
+# Post-Production Profili
+
+project_root: ".."
+book_slug: "github_kitabi"
+chapters_dir: "chapters"
+output_dir: "dist"
+assets_dir: "assets"
+build_dir: "build"
+
+chapters:
+  - id: chapter_01
+    source: "chapters/chapter_01.md"
+  - id: chapter_02
+    source: "chapters/chapter_02.md"
+  - id: chapter_03
+    source: "chapters/chapter_03.md"
+  - id: chapter_04
+    source: "chapters/chapter_04.md"
+  - id: chapter_05
+    source: "chapters/chapter_05.md"
+
+pandoc:
+  reference_docx: ""   # Varsa referans DOCX yolunu girin
+  lua_filter: ""       # Varsa Lua filter yolunu girin
+
+mermaid:
+  enabled: true
+  output_dir: "assets/auto/diagrams"
+
+stages:
+  - merge_chapters
+  - extract_mermaid
+  - render_mermaid
+  - build_docx
+  - build_html
+  - build_epub
