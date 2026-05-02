@@ -121,14 +121,62 @@ function updateMarkdownPreview() {
   }
 }
 
+let progressChart = null;
+
+function renderCharts(matrix) {
+  const counts = { final: 0, draft: 0, planned: 0, error: 0 };
+  const heatmap = $('healthHeatmap');
+  heatmap.innerHTML = '';
+  
+  matrix.forEach(r => {
+    let statusClass = `status-${r.status}`;
+    if (r.code_tests?.failed > 0) statusClass = 'status-error';
+    
+    counts[r.status === 'final' ? 'final' : (r.status === 'draft' ? 'draft' : 'planned')]++;
+    if (statusClass === 'status-error') counts.error++;
+
+    const box = document.createElement('div');
+    box.className = `heatmap-box ${statusClass}`;
+    box.textContent = r.order;
+    box.title = `${r.id}: ${r.title}`;
+    box.onclick = () => { $('importChapterId').value = r.id; showTab('chapters'); };
+    heatmap.appendChild(box);
+  });
+
+  const total = matrix.length || 1;
+  const percent = Math.round((counts.final / total) * 100);
+  
+  if (progressChart) progressChart.destroy();
+  const ctx = $('progressChart').getContext('2d');
+  progressChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [counts.final, total - counts.final],
+        backgroundColor: ['#126b3f', '#e9ecef'],
+        borderWidth: 0,
+        circumference: 360,
+        rotation: 0
+      }]
+    },
+    options: { cutout: '80%', plugins: { tooltip: { enabled: false } } }
+  });
+  
+  document.querySelector('.chart-label').textContent = `%${percent}`;
+}
+
 function renderDashboard() {
   const m = project?.manifest || {};
   $('bookTitle').textContent = m.book?.title || '-';
   $('bookAuthor').textContent = m.book?.author || '-';
   $('chapterCount').textContent = (project?.chapters || []).length;
   $('manifestState').textContent = project?.validation?.valid ? 'Geçerli' : 'Sorun var';
+  
+  const matrix = controlPanel?.chapter_matrix || [];
+  if (matrix.length) renderCharts(matrix);
+
   const warn = $('bookRootWarning');
-  if (project?.is_framework_root) {
+...  if (project?.is_framework_root) {
     warn.classList.remove('hidden');
     warn.innerHTML = '<strong>Yanlış kök seçilmiş olabilir.</strong> BookFactory framework klasörü yerine doğrudan kitap klasörünü seçin.';
   } else {
@@ -454,6 +502,22 @@ dropZone.addEventListener('drop', (e) => {
   if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
 });
 dropZone.addEventListener('click', () => $('mediaUploadInput').click());
+$('mediaUploadInput').addEventListener('change', (e) => {
+  if (e.target.files.length) uploadFiles(e.target.files);
+});
+$('refreshMedia').addEventListener('click', refreshMedia);
+
+async function loadPipelineSteps() {
+  const data = await api('/api/pipeline/steps');
+  $('pipelineStep').innerHTML = data.steps.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
+}
+
+function initStudio() {
+  loadProject();
+}
+
+initStudio();
+e.addEventListener('click', () => $('mediaUploadInput').click());
 $('mediaUploadInput').addEventListener('change', (e) => {
   if (e.target.files.length) uploadFiles(e.target.files);
 });
