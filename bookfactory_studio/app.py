@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""FastAPI orchestrator for BookFactory Studio."""
 from __future__ import annotations
 
 from dataclasses import asdict
@@ -9,73 +11,33 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
 
+# Modular Services
+from .services.manifest_service import ManifestService
+from .services.path_service import PathService
+from .services.health_service import HealthService
+from .services.prompt_service import PromptService
+
+# Pydantic Models
+from .models import (
+    ManifestRequest, ManifestYamlRequest, ProjectInitRequest, 
+    WizardInitRequest, WizardPromptRequest, ChapterImportRequest, 
+    JobRequest, StudioConfigRequest
+)
+
+# Core imports (temporarily keeping what isn't fully service-ized)
 from .core import (
-    control_panel_snapshot,
-    dump_yaml,
-    find_manifest,
-    framework_root,
-    import_chapter_markdown,
-    initialize_project,
-    load_studio_config,
-    load_yaml,
-    match_chapter_files,
-    normalize_manifest,
-    parse_yaml_text,
-    pipeline_steps,
-    project_root,
-    project_snapshot,
-    read_text_report,
-    render_architecture_prompt,
-    save_architecture_prompt,
-    set_active_book,
-    validate_manifest,
-    write_yaml,
+    load_studio_config, set_active_book, framework_root,
+    initialize_project, initialize_project_wizard,
+    render_architecture_prompt, dump_yaml, validate_manifest,
+    normalize_manifest, parse_yaml_text, pipeline_steps,
+    import_chapter_markdown, read_text_report, match_chapter_files,
+    write_yaml
 )
 from .jobs import create_job, get_job, read_job_log
 
-
-class ManifestRequest(BaseModel):
-    root: str = "."
-    manifest: dict[str, Any]
-    force: bool = False
-
-
-class WizardPromptRequest(BaseModel):
-    root: str = "."
-    data: dict[str, Any]
-    save: bool = True
-
-
-class ManifestYamlRequest(BaseModel):
-    root: str = "."
-    yaml_text: str
-    force: bool = False
-
-
-class ProjectInitRequest(BaseModel):
-    root: str = "."
-    manifest: dict[str, Any]
-
-
-class ChapterImportRequest(BaseModel):
-    root: str = "."
-    chapter_id: str
-    content: str = Field(min_length=1)
-
-
-class JobRequest(BaseModel):
-    root: str = "."
-    step: str
-    options: dict[str, Any] = Field(default_factory=dict)
-
-
-class StudioConfigRequest(BaseModel):
-    active_book: str
-
-
 app = FastAPI(title="BookFactory Studio", version="0.1.0")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -101,9 +63,8 @@ def health() -> dict[str, Any]:
 @app.get("/api/studio/config")
 def get_studio_config() -> dict[str, Any]:
     config = load_studio_config()
-    fw = str(framework_root())
     return {
-        "framework_root": fw,
+        "framework_root": str(framework_root()),
         "active_book": config.get("active_book"),
         "recent_books": [b for b in (config.get("recent_books") or []) if Path(b).exists()],
     }
@@ -123,146 +84,149 @@ def post_studio_config(req: StudioConfigRequest) -> dict[str, Any]:
             "active_book": config["active_book"],
             "recent_books": [b for b in (config.get("recent_books") or []) if Path(b).exists()],
         }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except HTTPException: raise
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/project")
 def get_project(root: str = Query(".")) -> dict[str, Any]:
     try:
-        return project_snapshot(project_root(root))
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        r = PathService.project_root(root)
+        if not ManifestService.find(r):
+            raise HTTPException(status_code=400, detail="Aktif dizinde book_manifest.yaml bulunamadı.")
+        return HealthService.project_snapshot(r)
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/control-panel")
 def control_panel(root: str = Query(".")) -> dict[str, Any]:
     try:
-        return control_panel_snapshot(project_root(root))
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        r = PathService.project_root(root)
+        if not ManifestService.find(r):
+            raise HTTPException(status_code=400, detail="Aktif dizinde book_manifest.yaml bulunamadı.")
+        return HealthService.control_panel_snapshot(r)
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/wizard/init-project")
+def wizard_init_project(req: WizardInitRequest) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(req.root)
+        return initialize_project_wizard(r, req.data)
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/manifest")
 def get_manifest(root: str = Query(".")) -> dict[str, Any]:
-    r = project_root(root)
-    path = find_manifest(r)
-    if not path:
-        raise HTTPException(status_code=404, detail="Manifest bulunamadı.")
-    manifest = load_yaml(path)
+    r = PathService.project_root(root)
+    path = ManifestService.find(r)
+    if not path: raise HTTPException(status_code=404, detail="Manifest bulunamadı.")
+    manifest = ManifestService.load(path)
     return {"path": str(path), "manifest": manifest, "yaml": dump_yaml(manifest), "validation": validate_manifest(manifest, root=r)}
 
 
 @app.post("/api/manifest/validate")
 def validate_manifest_api(req: ManifestRequest) -> dict[str, Any]:
     try:
-        r = project_root(req.root)
+        r = PathService.project_root(req.root)
         manifest = normalize_manifest(req.manifest)
         return validate_manifest(manifest, root=r)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/manifest/match-chapter-files")
 def match_manifest_chapter_files(req: ManifestRequest) -> dict[str, Any]:
     try:
-        r = project_root(req.root)
+        r = PathService.project_root(req.root)
         return match_chapter_files(r, req.manifest)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/manifest/render-yaml")
 def render_manifest_yaml(req: ManifestRequest) -> dict[str, Any]:
     try:
-        r = project_root(req.root)
+        r = PathService.project_root(req.root)
         manifest = normalize_manifest(req.manifest)
         return {"manifest": manifest, "yaml": dump_yaml(manifest), "validation": validate_manifest(manifest, root=r)}
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/manifest/parse-yaml")
 def parse_manifest_yaml_api(req: ManifestYamlRequest) -> dict[str, Any]:
     try:
-        r = project_root(req.root)
+        r = PathService.project_root(req.root)
         manifest = normalize_manifest(parse_yaml_text(req.yaml_text))
         return {"manifest": manifest, "yaml": dump_yaml(manifest), "validation": validate_manifest(manifest, root=r)}
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/manifest/save")
 def save_manifest(req: ManifestRequest) -> dict[str, Any]:
     try:
-        r = project_root(req.root)
+        r = PathService.project_root(req.root)
         manifest = normalize_manifest(req.manifest)
         validation = validate_manifest(manifest, root=r)
         if not validation.get("valid") and not req.force:
             raise HTTPException(status_code=422, detail={"message": "Manifest hatalı olduğu için kaydedilmedi.", "validation": validation})
-        path = find_manifest(r) or (r / "book_manifest.yaml")
+        path = ManifestService.find(r) or (r / "book_manifest.yaml")
         write_yaml(path, manifest)
         return {"ok": True, "path": str(path), "validation": validation, "manifest": manifest, "yaml": dump_yaml(manifest)}
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except HTTPException: raise
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/manifest/save-yaml")
 def save_manifest_yaml(req: ManifestYamlRequest) -> dict[str, Any]:
     try:
-        r = project_root(req.root)
+        r = PathService.project_root(req.root)
         manifest = normalize_manifest(parse_yaml_text(req.yaml_text))
         validation = validate_manifest(manifest, root=r)
         if not validation.get("valid") and not req.force:
             raise HTTPException(status_code=422, detail={"message": "Manifest hatalı olduğu için kaydedilmedi.", "validation": validation})
-        path = find_manifest(r) or (r / "book_manifest.yaml")
+        path = ManifestService.find(r) or (r / "book_manifest.yaml")
         write_yaml(path, manifest)
         return {"ok": True, "path": str(path), "validation": validation, "manifest": manifest, "yaml": dump_yaml(manifest)}
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except HTTPException: raise
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/project/init")
 def init_project(req: ProjectInitRequest) -> dict[str, Any]:
     try:
-        return initialize_project(project_root(req.root), req.manifest)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return initialize_project(PathService.project_root(req.root), req.manifest)
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/wizard/architecture-prompt")
 def architecture_prompt(req: WizardPromptRequest) -> dict[str, Any]:
     try:
-        r = project_root(req.root)
+        r = PathService.project_root(req.root)
+        prompt = render_architecture_prompt(req.data)
+        if req.use_rag and req.rag_query:
+            from tools.memory.rag_manager import BookContextMemory
+            memory = BookContextMemory(r)
+            context = memory.retrieve_context(req.rag_query)
+            rag_header = "\n\nLLM İÇİN ÖNCEKİ BÖLÜMLERDEN HATIRLATMA (CONTEXT):\n--------------------------------------------------\n"
+            prompt += f"{rag_header}{context}\n--------------------------------------------------\n"
         if req.save:
-            return save_architecture_prompt(r, req.data)
-        return {"prompt": render_architecture_prompt(req.data), "path": None}
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return PromptService.save_architecture_prompt(r, prompt)
+        return {"prompt": prompt, "path": None}
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/chapter-prompts/generate")
 def generate_chapter_prompt_files(req: JobRequest) -> dict[str, Any]:
     try:
-        job = create_job(project_root(req.root), "generate_chapter_prompts", req.options)
+        job = create_job(PathService.project_root(req.root), "generate_chapter_prompts", req.options)
         return asdict(job)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/chapters/import")
 def import_chapter(req: ChapterImportRequest) -> dict[str, Any]:
     try:
-        return import_chapter_markdown(project_root(req.root), req.chapter_id, req.content)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return import_chapter_markdown(PathService.project_root(req.root), req.chapter_id, req.content, lang=req.lang)
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/pipeline/steps")
@@ -273,49 +237,43 @@ def steps() -> dict[str, Any]:
 @app.post("/api/jobs")
 def start_job(req: JobRequest) -> dict[str, Any]:
     known = {s["id"] for s in pipeline_steps()}
-    if req.step not in known:
-        raise HTTPException(status_code=400, detail=f"Bilinmeyen step: {req.step}")
+    if req.step not in known: raise HTTPException(status_code=400, detail=f"Bilinmeyen step: {req.step}")
     try:
-        job = create_job(project_root(req.root), req.step, req.options)
+        job = create_job(PathService.project_root(req.root), req.step, req.options)
         return asdict(job)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/jobs/{job_id}")
 def job_status(job_id: str) -> dict[str, Any]:
     job = get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job bulunamadı. Sunucu yeniden başlatılmış olabilir; build/studio_jobs klasöründeki logları kontrol edin.")
+    if not job: raise HTTPException(status_code=404, detail="Job bulunamadı.")
     return asdict(job)
 
 
 @app.get("/api/jobs/{job_id}/log", response_class=PlainTextResponse)
 def job_log(job_id: str, root: str = Query(".")) -> PlainTextResponse:
-    return PlainTextResponse(read_job_log(project_root(root), job_id))
+    return PlainTextResponse(read_job_log(PathService.project_root(root), job_id))
 
 
 @app.get("/api/reports")
 def reports(root: str = Query(".")) -> dict[str, Any]:
     try:
-        return {"reports": project_snapshot(project_root(root)).get("reports", [])}
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        r = PathService.project_root(root)
+        return {"reports": HealthService.list_reports(r)}
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/report")
 def report(root: str = Query("."), path: str = Query(...)) -> dict[str, Any]:
     try:
-        return read_text_report(project_root(root), path)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return read_text_report(PathService.project_root(root), path)
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 def main() -> None:
     import uvicorn
-
     uvicorn.run("bookfactory_studio.app:app", host="127.0.0.1", port=8765, reload=False)
-
 
 if __name__ == "__main__":
     main()

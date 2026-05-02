@@ -11,6 +11,32 @@
   --bad: #a02020;
   --soft: #f8fafc;
 }
+
+body.dark-mode {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --line: #334155;
+  --soft: #1e293b;
+  --brand: #3b82f6;
+  --ok: #22c55e;
+}
+
+body.dark-mode .list button, body.dark-mode .list .item { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+body.dark-mode .list button:hover { background: #334155; }
+body.dark-mode input, body.dark-mode textarea, body.dark-mode select { background: #0f172a; color: #f1f5f9; border-color: #334155; }
+body.dark-mode .card { background: #1e293b; border-color: #334155; }
+body.dark-mode .preview-box { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+body.dark-mode .hint, body.dark-mode label.check { background: #0f172a; border-color: #334155; }
+body.dark-mode .sidebar { background: #1e293b; border-color: #334155; }
+body.dark-mode .sidebar .tab { color: #94a3b8; }
+body.dark-mode .sidebar .tab.active { background: #334155; color: #3b82f6; border-color: #3b82f6; }
+body.dark-mode .status { background: #1e293b; color: #94a3b8; border-color: #334155; }
+body.dark-mode .modal-content { background: #1e293b; color: #f1f5f9; }
+body.dark-mode .wizard-step-indicator { border-color: #334155; }
+body.dark-mode .wizard-step-indicator.active { border-color: #3b82f6; color: #3b82f6; }
+
 * { box-sizing: border-box; }
 
 h1, h2, h3, h4 {
@@ -36,13 +62,14 @@ body {
 .topbar { display: flex; justify-content: space-between; gap: 24px; align-items: center; padding: 18px 24px; background: #101828; color: #fff; }
 .topbar h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
 .topbar-brand { display: flex; flex-direction: column; gap: 2px; }
+.vtag { background: var(--brand); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; width: fit-content; }
 .fw-path { margin: 0; color: #8ba0bf; font-size: 12px; font-weight: 400; }
 .fw-path code { color: #b0c4de; font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; letter-spacing: 0; }
-.rootbox { display: flex; flex-direction: column; gap: 4px; min-width: 560px; }
+.rootbox { display: flex; flex-direction: column; gap: 4px; min-width: 500px; }
 .rootbox > label { font-size: 12px; color: #d0d5dd; }
 .rootinput-group { display: flex; gap: 6px; align-items: center; }
 .rootinput-group input { flex: 1; min-width: 180px; }
-.rootinput-group select { width: 160px; flex-shrink: 0; background: #1e2d44; color: #d0d5dd; border: 1px solid #2d4268; border-radius: 10px; }
+.rootinput-group select { width: 160px; flex-shrink: 0; background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px; font-size: 13px; }
 input, textarea, select {
   width: 100%;
   border: 1px solid var(--line);
@@ -143,6 +170,35 @@ th { color: var(--muted); font-size: 13px; font-weight: 600; background: #f8fafc
 .control-block h3 { margin-top: 0; }
 #chapterMatrixTable td:nth-child(2) { min-width: 180px; }
 #chapterMatrixTable td:nth-child(5) { min-width: 160px; }
+
+/* v3.3 Guided UX Enhancements */
+.progress-container { background: #e9ecef; border-radius: 10px; height: 12px; width: 100%; margin: 15px 0; overflow: hidden; position: relative; border: 1px solid var(--line); }
+.progress-bar { background: linear-gradient(90deg, var(--brand), #4f46e5); height: 100%; width: 0%; transition: width 0.4s ease; }
+.progress-bar.failed { background: var(--bad); }
+
+.stepper { display: flex; justify-content: space-between; margin: 20px 0 30px; position: relative; }
+.stepper::before { content: ''; position: absolute; top: 16px; left: 0; right: 0; height: 2px; background: var(--line); z-index: 1; }
+.step { position: relative; z-index: 2; background: var(--bg); padding: 0 10px; text-align: center; font-size: 12px; color: var(--muted); flex: 1; }
+.step-circle { width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; transition: all 0.3s; color: var(--muted); }
+.step.active .step-circle { border-color: var(--brand); color: var(--brand); box-shadow: 0 0 12px rgba(35,87,214,0.25); background: #fff; transform: scale(1.1); }
+.step.active { color: var(--brand); font-weight: 600; }
+.step.done .step-circle { background: var(--ok); border-color: var(--ok); color: #fff; }
+.step.done { color: var(--ok); }
+
+.guide-card { background: #fff; border-left: 5px solid var(--brand); padding: 18px 24px; border-radius: 14px; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(16,24,40,0.06); display: flex; justify-content: space-between; align-items: center; gap: 20px; border: 1px solid var(--line); border-left-width: 5px; }
+.guide-content h3 { margin: 0 0 4px; font-size: 16px; color: var(--brand); display: flex; align-items: center; gap: 8px; }
+.guide-content p { margin: 0; font-size: 14px; color: var(--text); }
+.guide-action button { white-space: nowrap; padding: 10px 20px; }
+
+/* v3.4 Author-Centric Enhancements */
+.split-view { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: 500px; margin-top: 15px; }
+.preview-box { border: 1px solid var(--line); border-radius: 8px; padding: 20px; background: #fff; overflow-y: auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: var(--text); }
+.preview-box h1, .preview-box h2, .preview-box h3 { color: var(--brand); margin-top: 0; }
+.preview-box code { background: var(--soft); padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+.preview-box pre { background: #2d3436; color: #fff; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+.preview-box img { max-width: 100%; height: auto; border-radius: 4px; }
+.preview-box blockquote { border-left: 4px solid var(--brand); padding-left: 15px; color: var(--muted); font-style: italic; }
+
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; }
   .sidebar { flex-direction: row; overflow-x: auto; }

@@ -2,6 +2,22 @@
 
 All notable changes to BookFactory are documented in this file.
 
+## [3.4.0] - 2026-05-02
+
+### Added
+- **RAG-based Context Memory:** ChromaDB integration for cross-chapter context injection.
+- **Academic Module:** Automatic Syllabus and AKTS Bilgi Paketi generation.
+- **Guided UX:** New Studio interface with Smart Guide, Steppers, and Progress Bars.
+- **Author-Centric UI:** Side-by-side Markdown preview, Project Switcher, and Keyboard Shortcuts.
+- **Visual Automation:** Dynamic plot interception (Matplotlib) and UI screenshot capture (Flutter).
+- **Project Init Wizard:** Interactive CLI and GUI project scaffolding.
+- **Strict Manifest Guard:** Mandatory manifest validation across all Studio endpoints.
+
+### Changed
+- **Modular Architecture:** Monolithic `core.py` refactored into modular services (`ManifestService`, `PathService`, etc.).
+- **Clean Code:** Centralized manifest discovery and improved directory structure.
+- Unified framework and studio versions to v3.4.0.
+
 ## [2.11.0] - 2026-04-30
 
 ### Added

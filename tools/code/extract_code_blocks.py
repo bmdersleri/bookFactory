@@ -219,6 +219,8 @@ def extract_from_file(md_file: Path, out_dir: Path, package_root: Path) -> tuple
             "timeout_sec",
             "sandbox",
             "args",
+            "expected_plot",
+            "captures_screenshot",
         ]
         for key in optional_keys:
             if key in meta:

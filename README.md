@@ -6,8 +6,8 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
 [![Pandoc](https://img.shields.io/badge/Pandoc-3.x-orange)](https://pandoc.org/)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.x-blueviolet)](https://learn.microsoft.com/powershell/)
-[![Sürüm](https://img.shields.io/badge/Framework-v2.11.x-purple)]()
-[![Studio](https://img.shields.io/badge/Studio-v3.1.x-teal)]()
+[![Sürüm](https://img.shields.io/badge/Framework-v3.4.0-purple)]()
+[![Studio](https://img.shields.io/badge/Studio-v3.4.0-teal)]()
 [![Lisans](https://img.shields.io/badge/Lisans-MIT-lightgrey)]()
 
 ---

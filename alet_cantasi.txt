@@ -1,0 +1,12 @@
+   Ortam Bilgisi ve Mevcut Araçlar:
+   Çalıştığım sistem Windows (PowerShell 7.5.6). Analiz, araştırma ve üretim süreçlerinde kullanabileceğin aşağıdaki yardımcı araçlar sistemde
+  yüklü ve PATH üzerinde hazırdır. İşlemlerini yaparken run_shell_command ile bu araçlardan faydalanabilirsin:
+   
+      Arama & Filtreleme:* rg (ripgrep), rga (ripgrep-all), fd (file-search), fzf (fuzzy-finder).
+      Veri & Metin İşleme:* jq (JSON), yq (YAML), bat (syntax highlighting).
+      Üretim & Dönüştürme:* pandoc (belge dönüşümü), mmdc (mermaid-cli), magick (imagemagick).
+      Analiz & Kalite:* tokei (kod istatistiği), hyperfine (benchmark), actionlint (CI/CD kontrol).
+      Paket Yöneticileri:* scoop, winget.
+      
+  
+   Bu araçları kullanarak daha hızlı araştırma yapabilir, manifestleri (yq) ve raporları (jq) daha etkin inceleyebilirsin. Şimdi projeyi tarayıp mevcut duruma göre görevine başlayabilirsin.

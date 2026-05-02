@@ -50,6 +50,42 @@ def skipped_item(item: dict[str, Any], reason: str) -> dict[str, Any]:
     }
 
 
+def inject_plot_reference(item: dict[str, Any], package_root: Path) -> None:
+    """Injects a markdown image reference after a code block if a plot was generated."""
+    expected_plot = item.get("expected_plot")
+    source_md_rel = item.get("source_markdown")
+    if not expected_plot or not source_md_rel:
+        return
+
+    md_path = package_root / source_md_rel
+    if not md_path.exists():
+        return
+
+    content = md_path.read_text(encoding="utf-8")
+
+    # Check if already injected
+    plot_ref = f"../assets/auto/plots/{expected_plot}"
+    if plot_ref in content:
+        return
+
+    # Find the specific CODE_META block for this code ID and the following code block
+    meta_id = item.get("id")
+    pattern = re.compile(
+        rf"(<!--\s*CODE_META[\s\S]*?id:\s*{re.escape(meta_id)}[\s\S]*?-->[\s\S]*?```[\s\S]*?```)",
+        re.MULTILINE
+    )
+
+    match = pattern.search(content)
+    if not match:
+        return
+
+    insertion_point = match.end()
+    injection = f"\n\n![Otomatik Üretilen Grafik - {meta_id}]({plot_ref})\n"
+
+    new_content = content[:insertion_point] + injection + content[insertion_point:]
+    md_path.write_text(new_content, encoding="utf-8")
+
+
 def write_markdown_report(report: dict[str, Any], path: Path) -> None:
     lines = [
         "# BookFactory Code Test Report",

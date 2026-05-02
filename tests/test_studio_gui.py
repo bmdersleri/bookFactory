@@ -77,9 +77,10 @@ def test_studio_normalizes_enterprise_manifest_policy_blocks() -> None:
 
     assert manifest["schema"] == {
         "manifest_version": "1.0",
-        "bookfactory_min_version": "2.11.0",
-        "studio_min_version": "3.1.3",
+        "bookfactory_min_version": "3.4.0",
+        "studio_min_version": "3.4.0",
     }
+
     assert manifest["quality_gates"]["require_code_meta"] is True
     assert manifest["quality_gates"]["require_code_tests_passed"] is True
     assert manifest["outputs"] == {

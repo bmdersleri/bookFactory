@@ -1,6 +1,6 @@
 # Parametric Computer Book Factory — LLM Project Brief (Index)
 
-**Framework sürümü:** v2.11.x
+**Framework sürümü:** v3.4.0
 **Belge dili:** Türkçe | Teknik dosya adları: İngilizce
 **Konum:** `docs/briefs/LLM_PROJECT_BRIEF.md`
 

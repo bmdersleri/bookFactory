@@ -4,7 +4,7 @@ book:
   author: Prof. Dr. İsmail KIRBAŞ
   edition: '1'
   year: '2026'
-  framework_version: v2.11.x
+  framework_version: v3.4.0
 language:
   primary_language: tr
   output_languages:

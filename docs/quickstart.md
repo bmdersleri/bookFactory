@@ -1,4 +1,4 @@
-# Quickstart — Parametric Computer Book Factory v2.5.0
+# Quickstart — Parametric Computer Book Factory v3.4.0
 
 Bu belge, framework’ün en kısa kullanım akışını özetler.
 

@@ -96,6 +96,64 @@ function renderRecentBooks(books) {
   });
 }
 
+function renderRecentBooks(roots) {
+  const select = $('recentBooksSelect');
+  if (!select) return;
+  // Keep the first option
+  const first = select.options[0];
+  select.innerHTML = '';
+  select.appendChild(first);
+  
+  roots.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r;
+    opt.textContent = r.split(/[\\/]/).pop() || r;
+    opt.title = r;
+    select.appendChild(opt);
+  });
+}
+
+$('recentBooksSelect').addEventListener('change', (e) => {
+  if (e.target.value) {
+    $('projectRoot').value = e.target.value;
+    loadProject();
+  }
+});
+
+// Keyboard Shortcuts & Power User Mode
+window.addEventListener('keydown', (e) => {
+  // Ctrl+S: Save Manifest
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    if (window.location.hash === '#manifest') {
+      $('saveManifestYaml').click();
+    } else {
+      setStatus('Lütfen kaydetmek için Manifest sekmesine gidin.', 'warn');
+    }
+  }
+  // Ctrl+Enter: Run Active Step
+  if (e.ctrlKey && e.key === 'Enter') {
+    if (window.location.hash === '#production') {
+      $('runStep').click();
+    }
+  }
+  // Alt+1 to Alt+5: Panel Switching
+  if (e.altKey && e.key >= '1' && e.key <= '7') {
+    const tabs = ['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports'];
+    const idx = parseInt(e.key) - 1;
+    if (tabs[idx]) showTab(tabs[idx]);
+  }
+});
+
+// Dark Mode Toggle
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', isDark);
+}
+
+$('toggleDarkMode').addEventListener('click', toggleDarkMode);
+if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+
 async function initStudio() {
   try {
     const config = await api('/api/studio/config');
@@ -113,8 +171,14 @@ async function initStudio() {
 async function loadProject() {
   try {
     setStatus('Kitap projesi yükleniyor...');
-    project = await api('/api/project?root=' + encodeURIComponent(root()));
-    controlPanel = await api('/api/control-panel?root=' + encodeURIComponent(root()));
+    const r = root();
+    project = await api('/api/project?root=' + encodeURIComponent(r));
+    
+    // If we reach here, manifest is found (or it would throw 400)
+    $('emptyState').classList.add('hidden');
+    document.querySelectorAll('.panel:not(#emptyState)').forEach(p => p.classList.remove('hidden'));
+    
+    controlPanel = await api('/api/control-panel?root=' + encodeURIComponent(r));
     manifestData = structuredClone(project.manifest || {});
     renderDashboard();
     renderControlPanel();
@@ -125,8 +189,7 @@ async function loadProject() {
     await refreshManifest(false);
     const valid = project.validation?.valid;
     setStatus('Kitap projesi yüklendi: ' + project.root, valid ? 'good' : 'warn');
-    // Seçili kitabı config'e kaydet
-    const r = root();
+    
     if (r && r !== '.') {
       try {
         const cfg = await api('/api/studio/config', {method: 'POST', body: JSON.stringify({active_book: r})});
@@ -134,15 +197,117 @@ async function loadProject() {
       } catch {}
     }
   } catch (e) {
+    if (e.message.includes('manifest.yaml bulunamadı')) {
+      $('emptyState').classList.remove('hidden');
+      document.querySelectorAll('.panel:not(#emptyState)').forEach(p => p.classList.add('hidden'));
+      setStatus('Lütfen bir kitap projesi seçin veya oluşturun.', 'warn');
+    } else {
+      setStatus('Hata: ' + e.message, 'bad');
+    }
+  }
+}
+
+// --- Project Init Wizard Logic ---
+let wizardStep = 1;
+
+function toggleInitWizard(show) {
+  $('initWizardModal').classList.toggle('hidden', !show);
+  if (show) {
+    wizardStep = 1;
+    updateWizardUI();
+  }
+}
+
+function updateWizardUI() {
+  document.querySelectorAll('.wizard-panel').forEach(p => p.classList.remove('visible'));
+  document.querySelectorAll('.wizard-step-indicator').forEach(i => i.classList.remove('active'));
+  
+  $(`wizardStep${wizardStep}`).classList.add('visible');
+  document.querySelector(`.wizard-step-indicator[data-step="${wizardStep}"]`).classList.add('active');
+  
+  $('prevStep').classList.toggle('hidden', wizardStep === 1);
+  $('nextStep').classList.toggle('hidden', wizardStep === 3);
+  $('finishWizard').classList.toggle('hidden', wizardStep !== 3);
+  
+  if (wizardStep === 3) renderWizardSummary();
+}
+
+function renderWizardSummary() {
+  const data = collectWizardData();
+  $('wizardSummary').innerHTML = `
+    <div class="item"><strong>Proje:</strong> ${escapeHtml(data.name)}</div>
+    <div class="item"><strong>Kitap:</strong> ${escapeHtml(data.title)}</div>
+    <div class="item"><strong>Yazar:</strong> ${escapeHtml(data.author)} (${data.lang})</div>
+    <div class="item"><strong>Stack:</strong> ${escapeHtml(data.stack_key)}</div>
+    <div class="item"><strong>Formatlar:</strong> ${Object.entries(data.outputs).filter(([k,v])=>v).map(([k,v])=>k.toUpperCase()).join(', ')}</div>
+    <div class="item"><strong>Gates:</strong> ${Object.entries(data.quality_gates).filter(([k,v])=>v).map(([k,v])=>k.replace('require_','')).join(', ')}</div>
+  `;
+}
+
+function collectWizardData() {
+  return {
+    name: $('iwName').value.trim() || 'my-book',
+    title: $('iwTitle').value.trim() || 'Yeni Kitap',
+    author: $('iwAuthor').value.trim() || 'Yazar',
+    lang: $('iwLang').value,
+    year: $('iwYear').value,
+    stack_key: $('iwStack').value,
+    outputs: {
+      docx: $('iwOutDocx').checked,
+      pdf: $('iwOutPdf').checked,
+      epub: $('iwOutEpub').checked,
+      html_site: $('iwOutHtml').checked
+    },
+    quality_gates: {
+      require_code_meta: $('iwGateCodeMeta').checked,
+      require_code_tests_passed: $('iwGateCodeTest').checked,
+      require_screenshot_plan: $('iwGateScreenshot').checked,
+      require_references: true,
+      require_outline_compliance: true
+    }
+  };
+}
+
+async function finishWizard() {
+  try {
+    setStatus('Proje oluşturuluyor...', 'warn');
+    const data = collectWizardData();
+    const res = await api('/api/wizard/init-project', {
+      method: 'POST',
+      body: JSON.stringify({root: root(), data: data})
+    });
+    toggleInitWizard(false);
+    $('projectRoot').value = res.root;
+    await loadProject();
+    setStatus('Proje başarıyla oluşturuldu ve yüklendi.', 'good');
+  } catch (e) {
     setStatus('Hata: ' + e.message, 'bad');
   }
 }
+
+$('openInitWizard').addEventListener('click', () => toggleInitWizard(true));
+$('emptyOpenWizard').addEventListener('click', () => toggleInitWizard(true));
+$('closeInitWizard').addEventListener('click', () => toggleInitWizard(false));
+$('prevStep').addEventListener('click', () => { if (wizardStep > 1) { wizardStep--; updateWizardUI(); } });
+$('nextStep').addEventListener('click', () => { if (wizardStep < 3) { wizardStep++; updateWizardUI(); } });
+$('finishWizard').addEventListener('click', finishWizard);
+$('emptySelectFolder').addEventListener('click', () => $('projectRoot').focus());
 
 function statusLabel(status) {
   if (status === 'ok') return '<span class="file-ok">OK</span>';
   if (status === 'fail') return '<span class="file-missing">FAIL</span>';
   return '<span class="warn">WARN</span>';
 }
+
+// Live Markdown Preview
+function updateMarkdownPreview() {
+  const content = $('chapterContent').value;
+  if (window.marked) {
+    $('markdownPreview').innerHTML = marked.parse(content);
+  }
+}
+
+$('chapterContent').addEventListener('input', updateMarkdownPreview);
 
 function boolMark(value) {
   return value ? '<span class="file-ok">Var</span>' : '<span class="file-missing">Yok</span>';
@@ -172,7 +337,7 @@ function renderControlPanel() {
       <td>${row.order}</td>
       <td><code>${escapeHtml(row.id)}</code><br><small>${escapeHtml(row.title || '')}</small></td>
       <td>${escapeHtml(row.status || '')}</td>
-      <td>${boolMark(row.full_text)}</td>
+      <td>${row.full_text ? '✅' : `<button class="smallbtn warn" onclick="generateSingleChapterPrompt('${row.id}')">Prompt Üret</button>`}</td>
       <td>${row.quality_report ? `<span class="file-ok">Rapor var</span><br><small>${escapeHtml(row.quality_report)}</small>` : '<span class="file-missing">Rapor yok</span>'}</td>
       <td>${row.code_blocks || 0} blok<br><small>${tests.passed || 0} geçti / ${tests.failed || 0} hata</small></td>
       <td>${escapeHtml(screenshotText)}</td>
@@ -191,7 +356,13 @@ function renderControlPanel() {
 
   const prompts = data.repair?.prompts || [];
   $('repairPanel').innerHTML = prompts.length ? prompts.map(x => (
-    `<button data-repair="${escapeHtml(x.id)}"><strong>${escapeHtml(x.id)}</strong><br><small>${escapeHtml(x.chapter_id)} · ${escapeHtml(x.language)} · ${escapeHtml(x.file)}</small></button>`
+    `<div class="item">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong>${escapeHtml(x.id)}</strong>
+        <button class="smallbtn" onclick="copyRepairPrompt('${x.id}')">Tamir Promptu Kopyala</button>
+      </div>
+      <small style="color:var(--bad)">${escapeHtml(x.failure_reason || '')}</small>
+    </div>`
   )).join('') : '<div class="item">Repair promptu gerektiren başarısız kod yok.</div>';
   document.querySelectorAll('#repairPanel button').forEach(btn => btn.addEventListener('click', () => {
     const item = prompts.find(x => x.id === btn.dataset.repair);
@@ -232,6 +403,54 @@ function renderDashboard() {
   $('statusCounts').innerHTML = Object.keys(counts).length ? Object.entries(counts).map(([k,v]) => `<span class="pill">${escapeHtml(k)}: ${v}</span>`).join('') : '<span class="pill">Henüz bölüm yok</span>';
   const reports = (project?.reports || []).slice(-6).reverse();
   $('recentReports').innerHTML = reports.length ? reports.map(r => `<div class="item">${escapeHtml(r.path)}<br><small>${r.size} bayt</small></div>`).join('') : '<div class="item">Rapor yok.</div>';
+  updateSmartGuide();
+}
+
+function updateSmartGuide() {
+  if (!project) return;
+  const m = project.manifest || {};
+  const matrix = controlPanel?.matrix || [];
+  const missingFiles = matrix.filter(r => !r.chapter_exists).length;
+  const failedTests = controlPanel?.code_report?.failed || 0;
+  
+  let nextAction = { text: "Projeniz harika görünüyor! Üretim aşamasına geçebilirsiniz.", btn: "Üretimi Başlat", tab: "production" };
+  let currentStepTab = "dashboard";
+
+  if (!m.book?.title || m.book.title === 'Yeni Kitap' || m.book.title === '-') {
+    nextAction = { text: "Kitap bilgileri henüz girilmemiş. Lütfen temel bilgileri düzenleyin.", btn: "Manifesti Düzenle", tab: "manifest" };
+    currentStepTab = "manifest";
+  } else if (!m.structure?.chapters || m.structure.chapters.length === 0) {
+    nextAction = { text: "Bölüm listesi boş. Kitap Sihirbazı ile mimariyi kurgulayabilirsiniz.", btn: "Sihirbaza Git", tab: "wizard" };
+    currentStepTab = "wizard";
+  } else if (missingFiles > 0) {
+    nextAction = { text: `${missingFiles} bölüm dosyası henüz oluşturulmamış. Girdi promptlarını üretip yazmaya başlayın.`, btn: "Bölümleri Yönet", tab: "chapters" };
+    currentStepTab = "chapters";
+  } else if (failedTests > 0) {
+    nextAction = { text: "Kod testlerinde hatalar tespit edildi. Lütfen düzeltmeleri yapın.", btn: "Kontrol Paneli", tab: "control" };
+    currentStepTab = "control";
+  } else {
+    currentStepTab = "production";
+  }
+
+  $('guideText').textContent = nextAction.text;
+  const btn = $('guideActionBtn');
+  btn.textContent = nextAction.btn;
+  btn.onclick = () => showTab(nextAction.tab);
+  $('smartGuide').classList.remove('hidden');
+  
+  updateStepper(currentStepTab);
+}
+
+function updateStepper(activeTab) {
+  const steps = document.querySelectorAll('.step');
+  const tabToStep = { 'wizard': 1, 'manifest': 1, 'chapters': 2, 'control': 3, 'production': 5, 'dashboard': 1 };
+  const currentStep = tabToStep[activeTab] || 1;
+
+  steps.forEach(s => {
+    const stepNum = parseInt(s.dataset.step);
+    s.classList.toggle('active', stepNum === currentStep);
+    s.classList.toggle('done', stepNum < currentStep);
+  });
 }
 
 async function refreshManifest(updateForm=true) {
@@ -310,8 +529,56 @@ function renderManifestForm() {
   $('mPathAssets').value = get(m, 'project.paths.assets', 'assets');
   $('mPathExports').value = get(m, 'project.paths.exports', 'exports');
 
+  // Academic fields
+  $('mCourseCode').value = get(m, 'academic.course_code', '');
+  $('mCourseName').value = get(m, 'academic.course_name', '');
+  $('mEcts').value = get(m, 'academic.ects_credits', 5);
+  $('mLearningOutcomes').value = (get(m, 'academic.learning_outcomes', []) || []).join('\n');
+
   renderManifestChapters();
+  renderGlossaryRows();
 }
+
+function renderGlossaryRows() {
+  const terms = get(manifestData, 'glossary', []);
+  const tbody = $('manifestGlossaryRows');
+  if (!tbody) return;
+  tbody.innerHTML = terms.map((t, idx) => (
+    `<tr data-idx="${idx}">
+      <td><input class="g-term" value="${escapeHtml(t.term)}" /></td>
+      <td><input class="g-def" value="${escapeHtml(t.definition)}" /></td>
+      <td><input class="g-cat" value="${escapeHtml(t.category || '')}" /></td>
+      <td><button class="smallbtn danger" onclick="removeGlossaryRow(${idx})">Sil</button></td>
+    </tr>`
+  )).join('');
+  tbody.querySelectorAll('input').forEach(el => el.addEventListener('input', syncGlossaryFromTable));
+}
+
+function syncGlossaryFromTable() {
+  const rows = [...document.querySelectorAll('#manifestGlossaryRows tr')];
+  const glossary = rows.map(tr => ({
+    term: tr.querySelector('.g-term').value.trim(),
+    definition: tr.querySelector('.g-def').value.trim(),
+    category: tr.querySelector('.g-cat').value.trim()
+  })).filter(x => x.term);
+  set(manifestData, 'glossary', glossary);
+}
+
+function addGlossaryRow() {
+  const terms = get(manifestData, 'glossary', []);
+  terms.push({term: 'Yeni Terim', definition: '', category: ''});
+  set(manifestData, 'glossary', terms);
+  renderGlossaryRows();
+}
+
+function removeGlossaryRow(idx) {
+  const terms = get(manifestData, 'glossary', []);
+  terms.splice(idx, 1);
+  set(manifestData, 'glossary', terms);
+  renderGlossaryRows();
+}
+
+$('addGlossaryTerm').addEventListener('click', addGlossaryRow);
 
 function chapterFileStatus(ch, idx) {
   const rows = project?.chapters || [];
@@ -417,6 +684,14 @@ function collectManifestFromForm() {
   set(m, 'project.paths.build', $('mPathBuild').value.trim() || 'build');
   set(m, 'project.paths.assets', $('mPathAssets').value.trim() || 'assets');
   set(m, 'project.paths.exports', $('mPathExports').value.trim() || 'exports');
+
+  // Academic
+  set(m, 'academic.course_code', $('mCourseCode').value.trim());
+  set(m, 'academic.course_name', $('mCourseName').value.trim());
+  set(m, 'academic.ects_credits', parseInt($('mEcts').value || 5));
+  set(m, 'academic.learning_outcomes', $('mLearningOutcomes').value.split('\n').map(s => s.trim()).filter(s => s));
+
+  // Glossary is already synced to manifestData via syncGlossaryFromTable
   manifestData = m;
   return m;
 }
@@ -545,7 +820,7 @@ function renumberChapters() {
 
 function wizardData() {
   return {
-    book: {title: $('wTitle').value, subtitle: $('wSubtitle').value, author: $('wAuthor').value, year: $('wYear').value, edition: '1', framework_version: 'v2.11.x'},
+    book: {title: $('wTitle').value, subtitle: $('wSubtitle').value, author: $('wAuthor').value, year: $('wYear').value, edition: '1', framework_version: 'v3.4.0'},
     language: {primary_language: 'tr', output_languages: ['tr'], file_naming_language: 'en', manifest_language: 'en', automation_language: 'en'},
     subject: $('wSubject').value,
     target_audience: $('wAudience').value,
@@ -558,11 +833,28 @@ function wizardData() {
 
 async function makeArchitecturePrompt() {
   try {
-    const data = await api('/api/wizard/architecture-prompt', {method: 'POST', body: JSON.stringify({root: root(), data: wizardData(), save: true})});
-    $('architecturePrompt').value = data.prompt;
-    setStatus('LLM kitap kurgusu promptu üretildi: ' + data.path, 'good');
+    const useRag = $('useRagToggle').checked;
+    const ragQuery = $('ragQueryInput').value.trim();
+    const data = wizardData();
+    const body = {
+      root: root(),
+      data: data,
+      save: true,
+      use_rag: useRag,
+      rag_query: ragQuery
+    };
+    const res = await api('/api/wizard/architecture-prompt', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+    $('architecturePrompt').value = res.prompt;
+    setStatus('LLM kitap kurgusu promptu üretildi: ' + res.path, 'good');
   } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
 }
+
+$('useRagToggle').addEventListener('change', (e) => {
+  $('ragQueryContainer').classList.toggle('hidden', !e.target.checked);
+});
 
 async function copyArchitecturePrompt() {
   await navigator.clipboard.writeText($('architecturePrompt').value);
@@ -591,10 +883,23 @@ function renderChapters() {
   </tr>`).join('');
 }
 
+$('useRagChaptersToggle').addEventListener('change', (e) => {
+  $('ragQueryChaptersContainer').classList.toggle('hidden', !e.target.checked);
+});
+
 async function startJob(step) {
   try {
     let options = {};
     try { options = JSON.parse($('jobOptions').value || '{}'); } catch { throw new Error('Seçenekler JSON biçiminde olmalı.'); }
+    
+    // Add RAG options for chapter prompt generation
+    if (step === 'generate_chapter_prompts') {
+        if ($('useRagChaptersToggle').checked) {
+            options.use_rag = true;
+            options.rag_query = $('ragQueryChaptersInput').value.trim();
+        }
+    }
+
     const job = await api('/api/jobs', {method: 'POST', body: JSON.stringify({root: root(), step, options})});
     activeJobId = job.id;
     $('jobInfo').textContent = `${job.step} — ${job.status} — ${job.id}`;
@@ -613,6 +918,30 @@ async function pollJob() {
     const log = await fetch('/api/jobs/' + activeJobId + '/log?root=' + encodeURIComponent(root())).then(r => r.text());
     $('jobLog').textContent = log;
     $('jobLog').scrollTop = $('jobLog').scrollHeight;
+
+    // Progress Calculation
+    const pipelineSteps = [
+      'validate_manifest', 'generate_chapter_prompts', 'outline_check', 
+      'extract_code', 'validate_code', 'test_code', 
+      'mermaid_extract', 'mermaid_render', 'qr_manifest', 'qr_generate', 
+      'github_sync', 'export', 'full_production'
+    ];
+    const stepIdx = pipelineSteps.indexOf(job.step);
+    let percent = 0;
+    
+    if (job.status === 'success') percent = 100;
+    else if (job.status === 'failed') percent = Math.max(10, (stepIdx / pipelineSteps.length) * 100);
+    else percent = Math.max(5, (stepIdx / pipelineSteps.length) * 100);
+
+    const pbar = $('mainProgressBar');
+    if (pbar) {
+      pbar.style.width = percent + '%';
+      pbar.classList.toggle('failed', job.status === 'failed');
+    }
+    
+    $('jobTitle').textContent = `İşlem: ${job.step.replace(/_/g, ' ').toUpperCase()}`;
+    $('jobStatusDetail').textContent = `Durum: ${job.status.toUpperCase()} | Aşama: ${stepIdx + 1}/${pipelineSteps.length}`;
+
     if (job.status === 'running' || job.status === 'queued') {
       jobTimer = setTimeout(pollJob, 1500);
     } else {
@@ -678,6 +1007,13 @@ $('importChapter').addEventListener('click', importChapter);
 $('runStep').addEventListener('click', () => startJob($('pipelineStep').value));
 $('runFull').addEventListener('click', () => startJob('full_production'));
 $('refreshReports').addEventListener('click', refreshReports);
+$('refreshControlPanel').addEventListener('click', refreshControlPanel);
+['mBookTitle','mBookAuthor','mBookYear','mPrimaryLanguage','mPathChapters','mPathChapterPrompts','mPathBuild','mPathAssets','mPathExports'].forEach(id => $(id).addEventListener('input', markInvalidInputs));
+
+const initialTab = window.location.hash.replace('#', '');
+if (initialTab && document.getElementById(initialTab)) showTab(initialTab, false);
+initStudio();
+r('click', refreshReports);
 $('refreshControlPanel').addEventListener('click', refreshControlPanel);
 ['mBookTitle','mBookAuthor','mBookYear','mPrimaryLanguage','mPathChapters','mPathChapterPrompts','mPathBuild','mPathAssets','mPathExports'].forEach(id => $(id).addEventListener('input', markInvalidInputs));
 

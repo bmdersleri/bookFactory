@@ -34,7 +34,7 @@ import textwrap
 from datetime import datetime
 from pathlib import Path
 
-BOOKFACTORY_VERSION = "v2.11.x"
+BOOKFACTORY_VERSION = "v3.4.0"
 
 
 def parse_args():

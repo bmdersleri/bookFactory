@@ -42,8 +42,8 @@ SAFE_DIRS = [
 
 STUDIO_CONFIG_FILE = ".studio_config.json"
 MANIFEST_VERSION = "1.0"
-BOOKFACTORY_MIN_VERSION = "2.11.0"
-STUDIO_MIN_VERSION = "3.1.3"
+BOOKFACTORY_MIN_VERSION = "3.4.0"
+STUDIO_MIN_VERSION = "3.4.0"
 
 QUALITY_GATE_DEFAULTS = {
     "require_code_meta": True,
@@ -118,6 +118,45 @@ def framework_root() -> Path:
     the production commands are still executed with the framework tools from here.
     """
     return Path(__file__).resolve().parents[1]
+
+
+def initialize_project_wizard(root: Path, data: dict[str, Any]) -> dict[str, Any]:
+    """Scaffold a new project using wizard data from Studio."""
+    from bookfactory.commands.init import scaffold, STACKS
+    
+    # Adapt Studio data to what CLI scaffold expects
+    # data comes from frontend wizard steps
+    answers = {
+        "name": data.get("name", "my-book"),
+        "title": data.get("title", "Yeni Kitap"),
+        "subtitle": data.get("subtitle", ""),
+        "author": data.get("author", "Yazar"),
+        "edition": data.get("edition", "1"),
+        "year": data.get("year", str(datetime.now().year)),
+        "lang": data.get("lang", "tr"),
+        "stack_key": data.get("stack_key", "web-react"),
+        "app_name": data.get("app_name", ""),
+        "app_desc": data.get("app_desc", ""),
+        "output": str(root.parent if root != Path(".") else Path.cwd()),
+        "framework_path": str(framework_root()),
+        "github_sync": data.get("github_sync", False),
+        "screenshot": data.get("screenshot", False),
+        "multilang": data.get("multilang", False),
+        "output_languages": data.get("output_languages", [data.get("lang", "tr")]),
+        "outputs": data.get("outputs", {"docx": True, "pdf": True, "epub": True, "html_site": True}),
+        "quality_gates": data.get("quality_gates", QUALITY_GATE_DEFAULTS),
+    }
+    answers["stack"] = STACKS.get(answers["stack_key"], STACKS["web-react"])
+    
+    # Create the project folders and manifest
+    project_path = scaffold(answers)
+    
+    return {
+        "ok": True, 
+        "path": str(project_path), 
+        "root": str(project_path),
+        "manifest_path": str(project_path / "manifests" / "book_manifest.yaml")
+    }
 
 
 def safe_relative(path: Path | None, base: Path) -> str:
@@ -1120,44 +1159,72 @@ Ardından uygun dil etiketiyle kod bloğu verilmelidir.
 """
 
 
-def generate_chapter_prompts(root: Path) -> dict[str, Any]:
+def generate_chapter_prompts(root: Path, use_rag: bool = False, rag_query: str | None = None) -> dict[str, Any]:
     manifest_path = find_manifest(root)
     if not manifest_path:
         raise FileNotFoundError("Manifest bulunamadı.")
     manifest = load_yaml(manifest_path)
     out_dir = root / "prompts" / "chapter_inputs"
     out_dir.mkdir(parents=True, exist_ok=True)
+    
+    rag_context = ""
+    if use_rag and rag_query:
+        try:
+            from tools.memory.rag_manager import BookContextMemory
+            memory = BookContextMemory(root)
+            rag_context = memory.retrieve_context(rag_query)
+        except Exception as exc:
+            rag_context = f"[RAG Hatası: {exc}]"
+
     generated = []
     for i, ch in enumerate(chapters_from_manifest(manifest), start=1):
         cid = chapter_id(ch, i)
         path = out_dir / f"{cid}_input.md"
-        path.write_text(render_chapter_input_prompt(manifest, ch, i), encoding="utf-8")
+        prompt = render_chapter_input_prompt(manifest, ch, i)
+        
+        if rag_context:
+            rag_block = "\n\n## 8. Önceki bölümlerden bağlam (RAG)\n"
+            rag_block += "--------------------------------------------------\n"
+            rag_block += f"{rag_context}\n"
+            rag_block += "--------------------------------------------------\n"
+            prompt += rag_block
+            
+        path.write_text(prompt, encoding="utf-8")
         generated.append({"id": cid, "path": safe_relative(path, root)})
-    return {"count": len(generated), "generated": generated}
+    return {"count": len(generated), "generated": generated, "rag_active": use_rag}
 
 
-def import_chapter_markdown(root: Path, cid: str, content: str) -> dict[str, Any]:
+def import_chapter_markdown(root: Path, cid: str, content: str, lang: str | None = None) -> dict[str, Any]:
     manifest_path = find_manifest(root)
     if not manifest_path:
         raise FileNotFoundError("Manifest bulunamadı.")
     manifest = load_yaml(manifest_path)
     target_file: str | None = None
+    target_chapter: dict[str, Any] | None = None
+    target_order: int = 0
     for i, ch in enumerate(chapters_from_manifest(manifest), start=1):
         if chapter_id(ch, i) == cid:
             target_file = chapter_file(ch, i)
-            ch["status"] = "draft"
+            target_chapter = ch
+            target_order = i
+            if not lang:
+                ch["status"] = "draft"
             break
-    if not target_file:
+    if not target_file or not target_chapter:
         raise ValueError(f"Bölüm bulunamadı: {cid}")
-    target = chapter_markdown_path(root, ch, i) if 'ch' in locals() else root / "chapters" / target_file
+    
+    target = chapter_markdown_path(root, target_chapter, target_order, lang=lang)
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
-        backup = root / "chapter_backups" / f"{target.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        backup_dir = root / "chapter_backups"
+        if lang:
+            backup_dir = backup_dir / lang
+        backup = backup_dir / f"{target.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
         backup.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(target, backup)
     target.write_text(content, encoding="utf-8")
     write_yaml(manifest_path, manifest)
-    return {"id": cid, "path": safe_relative(target, root), "bytes": target.stat().st_size}
+    return {"id": cid, "path": safe_relative(target, root), "bytes": target.stat().st_size, "lang": lang}
 
 
 def list_reports(root: Path, include_content: bool = False) -> list[dict[str, Any]]:

@@ -164,7 +164,9 @@ def _execute_step(step: str, root: Path, log_path: Path, options: dict[str, Any]
         _append(log_path, json.dumps(report, ensure_ascii=False, indent=2))
         return 0 if report.get("valid") else 1
     if step == "generate_chapter_prompts":
-        result = generate_chapter_prompts(root)
+        use_rag = bool(options.get("use_rag", False))
+        rag_query = options.get("rag_query")
+        result = generate_chapter_prompts(root, use_rag=use_rag, rag_query=rag_query)
         _append(log_path, json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if step == "outline_check":

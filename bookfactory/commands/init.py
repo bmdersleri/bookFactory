@@ -19,7 +19,7 @@ from pathlib import Path
 
 import yaml  # pyyaml
 
-FRAMEWORK_VERSION = "v2.11.x"
+FRAMEWORK_VERSION = "v3.4.0"
 
 # ─────────────────────────────────────────────
 # Renk ve terminal yardımcıları
@@ -232,6 +232,24 @@ def collect_answers(output_dir: Path) -> dict:
 
     # ── 7. Ek seçenekler ─────────────────────
     header("7/7  Ek seçenekler")
+    
+    print(c("\n  Çıktı formatlarını seçin:", "dim"))
+    answers["outputs"] = {
+        "docx": ask_yn("DOCX üretilsin mi?", default=True),
+        "pdf": ask_yn("PDF üretilsin mi?", default=True),
+        "epub": ask_yn("EPUB üretilsin mi?", default=True),
+        "html_site": ask_yn("HTML/Site üretilsin mi?", default=True),
+    }
+
+    print(c("\n  Kalite kapılarını (Quality Gates) yapılandırın:", "dim"))
+    answers["quality_gates"] = {
+        "require_code_meta": ask_yn("CODE_META zorunlu olsun mu?", default=True),
+        "require_code_tests_passed": ask_yn("Kod testleri geçmek zorunda mı?", default=True),
+        "require_screenshot_plan": ask_yn("Screenshot planı zorunlu mu?", default=True),
+        "require_references": True,
+        "require_outline_compliance": True,
+    }
+
     answers["github_sync"] = ask_yn("GitHub sync ve QR üretimi etkin olsun mu?", default=False)
     answers["screenshot"] = ask_yn("Screenshot otomasyonu planlanıyor mu?", default=False)
     answers["multilang"] = ask_yn("Çok dilli üretim (ör. tr + en) istiyor musunuz?", default=False)

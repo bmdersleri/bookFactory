@@ -20,7 +20,9 @@
     "timeout_sec": {"type": "integer", "minimum": 1, "maximum": 300},
     "sandbox": {"type": "string", "enum": ["local", "docker", "local_or_docker"]},
     "github": {"type": "boolean"},
-    "qr": {"type": "string", "enum": ["none", "source", "page", "dual"]}
+    "qr": {"type": "string", "enum": ["none", "source", "page", "dual"]},
+    "expected_plot": {"type": "string", "description": "Otomatik üretilecek grafik dosya adı (örn: plot.png)"},
+    "captures_screenshot": {"type": "string", "description": "Ekran görüntüsü ID'si. Markdown içindeki [SCREENSHOT:id] ile eşleşir."}
   },
   "additionalProperties": true
 }
