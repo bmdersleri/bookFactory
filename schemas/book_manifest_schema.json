@@ -296,6 +296,22 @@
       }
     },
 
+    "resources": {
+      "description": "Kitapta kullanılan veri setleri ve harici kaynaklar",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "path": { "type": "string" },
+          "type": { "type": "string", "enum": ["dataset", "documentation", "external_link"] },
+          "chapter_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+
     "ci": {
       "description": "CI davranışını manifestten yöneten ortak kurallar",
       "type": "object",

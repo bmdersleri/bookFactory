@@ -18,7 +18,7 @@ class AssetService:
         assets = []
         # Support subdirectories like manual/ auto/
         for p in asset_root.rglob("*"):
-            if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".svg", ".webp", ".gif"}:
+            if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".svg", ".webp", ".gif", ".csv", ".json", ".sqlite", ".db"}:
                 assets.append({
                     "name": p.name,
                     "rel_path": str(p.relative_to(root)).replace("\\", "/"),
@@ -30,9 +30,14 @@ class AssetService:
 
     @staticmethod
     def save_asset(root: Path, filename: str, content: bytes, category: str = "manual") -> str:
-        """Saves an uploaded asset to assets/{category}/screenshots/."""
-        # Standard location for book images
-        target_dir = root / "assets" / category / "screenshots"
+        """Saves an uploaded asset."""
+        # Map extension to subfolder
+        ext = Path(filename).suffix.lower()
+        subfolder = "screenshots"
+        if ext in {".csv", ".json", ".sqlite", ".db"}:
+            subfolder = "datasets"
+            
+        target_dir = root / "assets" / category / subfolder
         target_dir.mkdir(parents=True, exist_ok=True)
         
         target_path = target_dir / filename

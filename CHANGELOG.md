@@ -2,7 +2,18 @@
 
 All notable changes to BookFactory are documented in this file.
 
-## [3.9.0] - 2026-05-02
+## [4.0.0] - 2026-05-02
+
+### Added
+- **Resource & Dataset Tracking:** Centralized management of CSV, JSON, and external resources in the manifest and Studio.
+- **Interactive Sandbox Support:** Automatically generate Google Colab and Wokwi links from code blocks using `sandbox_link`.
+- **Project-Based Code Snippets:** Group related files (main, config, requirements) using `group_id` for cohesive project views.
+- **Comparison Mode:** Side-by-side code block rendering for comparing languages or versions via `compare_with`.
+- **Expanded Media Library:** Direct support for uploading and managing dataset files alongside images.
+
+### Changed
+- Refactored Studio frontend (app.js) into a unified Technical Verticalization Edition.
+- Updated manifest schema and CODE_META standards for advanced technical authoring.
 
 ### Added
 - **Adaptive Prompt Engine:** Dynamic assembly of LLM instructions based on book profile (Complexity, Context, Coding Standards, Math Rigor).

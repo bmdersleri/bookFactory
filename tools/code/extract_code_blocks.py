@@ -221,6 +221,9 @@ def extract_from_file(md_file: Path, out_dir: Path, package_root: Path) -> tuple
             "args",
             "expected_plot",
             "captures_screenshot",
+            "sandbox_link",
+            "group_id",
+            "compare_with",
         ]
         for key in optional_keys:
             if key in meta:

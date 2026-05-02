@@ -22,7 +22,10 @@
     "github": {"type": "boolean"},
     "qr": {"type": "string", "enum": ["none", "source", "page", "dual", "force", "auto"]},
     "expected_plot": {"type": "string", "description": "Otomatik üretilecek grafik dosya adı (örn: plot.png)"},
-    "captures_screenshot": {"type": "string", "description": "Ekran görüntüsü ID'si. Markdown içindeki [SCREENSHOT:id] ile eşleşir."}
+    "captures_screenshot": {"type": "string", "description": "Ekran görüntüsü ID'si. Markdown içindeki [SCREENSHOT:id] ile eşleşir."},
+    "sandbox_link": {"type": "boolean", "default": false, "description": "Google Colab veya Wokwi linki üret"},
+    "group_id": {"type": "string", "description": "Kod bloklarını projeler halinde gruplamak için kullanılır"},
+    "compare_with": {"type": "string", "description": "Karşılaştırılacak diğer kod ID'si (Side-by-Side mode)"}
   },
   "additionalProperties": true
 }

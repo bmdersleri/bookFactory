@@ -1,6 +1,6 @@
 /**
- * BookFactory Studio Frontend Orchestrator v3.8
- * User Experience & Smart Layout Edition
+ * BookFactory Studio Frontend Orchestrator v4.0
+ * Technical Verticalization Edition
  */
 
 let project = null;
@@ -83,20 +83,16 @@ function set(obj, path, value) {
 
 async function loadProject() {
   try {
-    setStatus('Kitap projesi yükleniyor...');
     const r = $('projectRoot').value.trim() || '.';
     project = await api('/api/project?root=' + encodeURIComponent(r));
     $('emptyState').classList.add('hidden');
     document.querySelectorAll('.panel:not(#emptyState)').forEach(p => p.classList.remove('hidden'));
     controlPanel = await api('/api/control-panel?root=' + encodeURIComponent(r));
     manifestData = structuredClone(project.manifest || {});
-    renderDashboard();
-    renderControlPanel();
-    renderChapters();
-    renderManifestForm();
+    renderDashboard(); renderControlPanel(); renderChapters(); renderManifestForm();
     await loadPipelineSteps();
     await refreshManifest(false);
-    setStatus('Kitap projesi yüklendi: ' + project.root, 'good');
+    setStatus('Kitap yüklendi: ' + project.root, 'good');
   } catch (e) {
     if (e.message.includes('bulunamadı')) {
       $('emptyState').classList.remove('hidden');
@@ -123,15 +119,13 @@ function insertMD(type) {
   area.focus(); updateMarkdownPreview();
 }
 
-function updateMarkdownPreview() {
-  if (window.marked) $('markdownPreview').innerHTML = marked.parse($('chapterContent').value);
-}
+function updateMarkdownPreview() { if (window.marked) $('markdownPreview').innerHTML = marked.parse($('chapterContent').value); }
+function openMetaWizard() { $('metaWizardModal').classList.remove('hidden'); }
 
 let progressChart = null;
 function renderCharts(matrix) {
   const counts = { final: 0, total: matrix.length || 1 };
-  const heatmap = $('healthHeatmap');
-  heatmap.innerHTML = '';
+  const heatmap = $('healthHeatmap'); heatmap.innerHTML = '';
   matrix.forEach(r => {
     if (r.status === 'final') counts.final++;
     const box = document.createElement('div');
@@ -152,8 +146,7 @@ function renderDashboard() {
   $('bookTitle').textContent = m.book?.title || '-';
   $('bookAuthor').textContent = m.book?.author || '-';
   $('chapterCount').textContent = (project?.chapters || []).length;
-  const matrix = controlPanel?.chapter_matrix || [];
-  if (matrix.length) renderCharts(matrix);
+  if (controlPanel?.chapter_matrix) renderCharts(controlPanel.chapter_matrix);
   updateSmartGuide();
 }
 
@@ -167,6 +160,7 @@ function updateSmartGuide() {
   $('guideText').textContent = next.text;
   $('guideActionBtn').textContent = next.btn;
   $('guideActionBtn').onclick = () => showTab(next.tab);
+  $('smartGuide').classList.remove('hidden');
   updateStepper(next.tab);
 }
 
@@ -233,20 +227,16 @@ function renderManifestForm() {
   $('mCourseName').value = get(m, 'academic.course_name');
   $('mStyleProfile').value = get(m, 'language.style_profile', 'Academic');
   $('mPedagogicalModel').value = get(m, 'language.pedagogical_model', 'Bloom');
-
-  // Adaptive Authoring fields
+  
   $('mComplexity').value = get(m, 'authoring.complexity_level', 'Intermediate');
   $('mContext').value = get(m, 'authoring.industrial_context', 'Academic');
   $('mNaming').value = get(m, 'authoring.coding_conventions.variable_naming', 'snake_case');
   $('mHinting').value = get(m, 'authoring.coding_conventions.type_hinting', 'optional');
   $('mMath').value = get(m, 'authoring.math_rigor', 'Minimal');
 
-  $('mCodeExtract').checked = Boolean(get(m, 'code.extract', true));
-  $('mCodeTest').checked = Boolean(get(m, 'code.test', true));
-  $('mQrThreshold').value = get(m, 'code.qr_threshold_lines', 15);
-
-  renderGlossaryRows(); renderManifestChapterRows();
+  renderGlossaryRows(); renderManifestChapterRows(); renderResourceRows();
 }
+
 function renderManifestChapterRows() {
   const chapters = manifestData.structure?.chapters || [];
   const tbody = $('manifestChapterRows'); if (!tbody) return;
@@ -256,6 +246,14 @@ function renderManifestChapterRows() {
     manifestData.structure.chapters = news; renderManifestChapterRows();
   }});
 }
+
+function renderResourceRows() {
+  const resources = get(manifestData, 'resources', []);
+  const tbody = $('manifestResourceRows'); if (!tbody) return;
+  tbody.innerHTML = resources.map((r, idx) => `<tr><td><input class="r-id" value="${escapeHtml(r.id)}" /></td><td><input class="r-title" value="${escapeHtml(r.title)}" /></td><td><input class="r-path" value="${escapeHtml(r.path)}" /></td><td><select class="r-type"><option ${r.type==='dataset'?'selected':''} value="dataset">dataset</option><option ${r.type==='documentation'?'selected':''} value="documentation">documentation</option><option ${r.type==='external_link'?'selected':''} value="external_link">link</option></select></td><td><button class="smallbtn danger" onclick="removeResourceRow(${idx})">Sil</button></td></tr>`).join('');
+}
+function addResourceRow() { if (!manifestData.resources) manifestData.resources = []; manifestData.resources.push({id: 'data_01', title: 'Veri', path: '', type: 'dataset'}); renderResourceRows(); }
+function removeResourceRow(idx) { manifestData.resources.splice(idx, 1); renderResourceRows(); }
 
 function renderGlossaryRows() {
   const terms = get(manifestData, 'glossary', []);
@@ -270,40 +268,26 @@ function removeChapterRow(idx) { manifestData.structure.chapters.splice(idx, 1);
 async function saveManifestForm() {
   const m = structuredClone(manifestData);
   m.book.title = $('mBookTitle').value; m.book.author = $('mBookAuthor').value;
-  m.academic = m.academic || {}; m.academic.course_code = $('mCourseCode').value; m.academic.course_name = $('mCourseName').value;
-  m.language.style_profile = $('mStyleProfile').value; m.language.pedagogical_model = $('mPedagogicalModel').value;
+  m.academic = { course_code: $('mCourseCode').value, course_name: $('mCourseName').value };
+  m.authoring = { complexity_level: $('mComplexity').value, industrial_context: $('mContext').value, coding_conventions: { variable_naming: $('mNaming').value, type_hinting: $('mHinting').value }, math_rigor: $('mMath').value };
   
-  // Authoring
-  m.authoring = m.authoring || {};
-  m.authoring.complexity_level = $('mComplexity').value;
-  m.authoring.industrial_context = $('mContext').value;
-  m.authoring.coding_conventions = m.authoring.coding_conventions || {};
-  m.authoring.coding_conventions.variable_naming = $('mNaming').value;
-  m.authoring.coding_conventions.type_hinting = $('mHinting').value;
-  m.authoring.math_rigor = $('mMath').value;
+  // Sync resources from table
+  m.resources = [];
+  document.querySelectorAll('#manifestResourceRows tr').forEach(tr => {
+    const id = tr.querySelector('.r-id').value.trim();
+    if (id) m.resources.push({ id, title: tr.querySelector('.r-title').value.trim(), path: tr.querySelector('.r-path').value.trim(), type: tr.querySelector('.r-type').value });
+  });
 
-  m.code = m.code || {};
-  m.code.extract = $('mCodeExtract').checked;
-  m.code.test = $('mCodeTest').checked;
-  m.code.qr_threshold_lines = parseInt($('mQrThreshold').value || 15);
-
-  try {
-    await api('/api/manifest/save', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, manifest: m }) });
-    setStatus('Kaydedildi.', 'good'); await loadProject();
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+  await api('/api/manifest/save', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, manifest: m }) });
+  setStatus('Kaydedildi.', 'good'); await loadProject();
 }
 
 async function refreshMedia() {
-  try {
-    const data = await api('/api/assets?root=' + encodeURIComponent($('projectRoot').value));
-    $('mediaGrid').innerHTML = data.assets.map(a => `<div class="media-item"><div class="media-thumb"><img src="/api/project/file?path=${encodeURIComponent(a.rel_path)}&root=${encodeURIComponent($('projectRoot').value)}"></div><div class="media-info"><div class="media-name">${escapeHtml(a.name)}</div><button class="smallbtn" onclick="copyMarkdownLink('${a.rel_path}', '${a.name}')">Link</button></div></div>`).join('');
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+  const data = await api('/api/assets?root=' + encodeURIComponent($('projectRoot').value));
+  $('mediaGrid').innerHTML = data.assets.map(a => `<div class="media-item"><div class="media-thumb"><img src="/api/project/file?path=${encodeURIComponent(a.rel_path)}&root=${encodeURIComponent($('projectRoot').value)}"></div><div class="media-info"><div class="media-name">${escapeHtml(a.name)}</div><button class="smallbtn" onclick="copyMarkdownLink('${a.rel_path}', '${a.name}')">Link</button></div></div>`).join('');
 }
 
-async function copyMarkdownLink(path, name) {
-  await navigator.clipboard.writeText(`![${name.split('.')[0]}](../${path})`);
-  showToast('Link kopyalandı.');
-}
+async function copyMarkdownLink(path, name) { await navigator.clipboard.writeText(`![${name.split('.')[0]}](../${path})`); showToast('Link kopyalandı.'); }
 
 // Global Init
 $('loadProject').addEventListener('click', loadProject);
@@ -311,11 +295,24 @@ $('toggleDarkMode').addEventListener('click', () => { localStorage.setItem('dark
 if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
 $('chapterContent').addEventListener('input', updateMarkdownPreview);
 $('addGlossaryTerm').addEventListener('click', addGlossaryRow);
+$('addResource').addEventListener('click', addResourceRow);
 $('saveManifestForm').addEventListener('click', saveManifestForm);
 $('closeDebug').addEventListener('click', () => $('debugModal').classList.add('hidden'));
 $('saveAndTestCode').addEventListener('click', saveAndTestCode);
-$('runStep').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: $('pipelineStep').value, options: JSON.parse($('jobOptions').value || '{}') }) }).then(j => pollJob(job.id)); });
-$('runWebSite').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({root: $('projectRoot').value, step: 'generate-web-site', options: {}}) }).then(j => pollJob(job.id)); });
+$('insertMetaBlock').addEventListener('click', () => {
+  const id = $('mwId').value.trim() || 'code_01', lang = $('mwLang').value, file = $('mwFile').value.trim(), test = $('mwTest').value;
+  const shot = $('mwScreenshot').checked ? `\ncaptures_screenshot: "${$('mwScreenshotId').value.trim() || id}"` : '';
+  const sandbox = $('mwSandbox').checked ? `\nsandbox_link: true` : '';
+  const group = $('mwGroupId').value.trim() ? `\ngroup_id: "${$('mwGroupId').value.trim()}"` : '';
+  const compare = $('mwCompare').value.trim() ? `\ncompare_with: "${$('mwCompare').value.trim()}"` : '';
+  const block = `\n<!-- CODE_META\nid: ${id}\nchapter_id: ${$('importChapterId').value || 'chapter_XX'}\nlanguage: ${lang}\nfile: ${file}\ntest: ${test}${shot}${sandbox}${group}${compare}\n-->\n\n\`\`\`${lang}\n\n\`\`\`\n`;
+  $('chapterContent').value += block; $('metaWizardModal').classList.add('hidden'); updateMarkdownPreview();
+});
+$('closeMetaWizard').addEventListener('click', () => $('metaWizardModal').classList.add('hidden'));
+$('mwScreenshot').addEventListener('change', (e) => $('mwScreenshotIdBox').classList.toggle('hidden', !e.target.checked));
+$('runStep').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: $('pipelineStep').value, options: JSON.parse($('jobOptions').value || '{}') }) }).then(j => pollJob(j.id)); });
+$('runFull').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: 'full_production', options: {}}) }).then(j => pollJob(j.id)); });
+$('runWebSite').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({root: $('projectRoot').value, step: 'generate-web-site', options: {}}) }).then(j => pollJob(j.id)); });
 window.addEventListener('keydown', (e) => { if (e.altKey && e.key >= '1' && e.key <= '8') showTab(['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports', 'media'][parseInt(e.key)-1]); });
 async function loadPipelineSteps() { const data = await api('/api/pipeline/steps'); $('pipelineStep').innerHTML = data.steps.map(s => `<option value="${s.id}">${s.title}</option>`).join(''); }
 
