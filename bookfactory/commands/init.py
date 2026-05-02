@@ -19,7 +19,7 @@ from pathlib import Path
 
 import yaml  # pyyaml
 
-FRAMEWORK_VERSION = "v3.4.0"
+FRAMEWORK_VERSION = "v3.5.0"
 
 # ─────────────────────────────────────────────
 # Renk ve terminal yardımcıları

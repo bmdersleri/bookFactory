@@ -116,6 +116,20 @@ def wizard_init_project(req: WizardInitRequest) -> dict[str, Any]:
     except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.get("/api/project/file")
+def get_project_file(path: str = Query(...), root: str = Query(".")) -> FileResponse:
+    try:
+        r = PathService.project_root(root)
+        full_path = (r / path).resolve()
+        if not str(full_path).startswith(str(r.resolve())):
+            raise HTTPException(status_code=403, detail="Erişim engellendi.")
+        if not full_path.exists():
+            raise HTTPException(status_code=404, detail="Dosya bulunamadı.")
+        return FileResponse(full_path)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @app.get("/api/manifest")
 def get_manifest(root: str = Query(".")) -> dict[str, Any]:
     r = PathService.project_root(root)
@@ -226,7 +240,34 @@ def generate_chapter_prompt_files(req: JobRequest) -> dict[str, Any]:
 def import_chapter(req: ChapterImportRequest) -> dict[str, Any]:
     try:
         return import_chapter_markdown(PathService.project_root(req.root), req.chapter_id, req.content, lang=req.lang)
-    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/chapters/consistency-audit/{chapter_id}")
+def consistency_audit(chapter_id: str, root: str = Query(".")) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        manifest_path = ManifestService.find(r)
+        if not manifest_path:
+            raise HTTPException(status_code=400, detail="Manifest bulunamadı.")
+
+        manifest = ManifestService.load(manifest_path)
+        # Find chapter by ID
+        chapter = None
+        for i, ch in enumerate(ManifestService.chapters_from_manifest(manifest), 1):
+            if ManifestService.chapter_id(ch, i) == chapter_id:
+                chapter = ch
+                break
+
+        if not chapter:
+            raise HTTPException(status_code=404, detail="Bölüm bulunamadı.")
+
+        job = create_job(r, "consistency_audit", {"chapter_id": chapter_id})
+        return asdict(job)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
 
 
 @app.get("/api/pipeline/steps")
@@ -268,6 +309,29 @@ def reports(root: str = Query(".")) -> dict[str, Any]:
 def report(root: str = Query("."), path: str = Query(...)) -> dict[str, Any]:
     try:
         return read_text_report(PathService.project_root(root), path)
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/code/block/{chapter_id}/{code_id}")
+def get_code_block(chapter_id: str, code_id: str, root: str = Query(".")) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        res = CodeService.get_code_block(r, chapter_id, code_id)
+        if "error" in res:
+            raise HTTPException(status_code=404, detail=res["error"])
+        return res
+    except HTTPException: raise
+    except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/code/update")
+def update_code_block(req: CodeUpdateRequest) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(req.root)
+        success = CodeService.update_code_block(r, req.chapter_id, req.code_id, req.code)
+        if not success:
+            raise HTTPException(status_code=400, detail="Kod bloğu güncellenemedi.")
+        return {"ok": True}
     except Exception as exc: raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 

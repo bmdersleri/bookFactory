@@ -201,7 +201,7 @@ def main(argv: list[str] | None = None):
 
     # ── Yönlendirme ───────────────────────────────────────────────────────
     if args.command == "version":
-        print("Parametric Computer Book Factory v3.4.0")
+        print("Parametric Computer Book Factory v3.5.0")
 
     elif args.command == "init":
         from bookfactory.commands.init import run as run_init

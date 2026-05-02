@@ -11,7 +11,7 @@
   <header class="topbar">
     <div class="topbar-brand">
       <h1>BookFactory Studio</h1>
-      <span class="vtag">v3.4.0 Author-Centric</span>
+      <span class="vtag">v3.5.0 Intelligent Quality</span>
       <p class="fw-path">Framework: <code id="frameworkRoot">yükleniyor…</code></p>
     </div>
     <div class="rootbox">
@@ -350,6 +350,7 @@ Backend / ORM</textarea></label>
         </div>
         <button id="runStep">Seçili Adımı Çalıştır</button>
         <button id="runFull" class="secondary">Tam Üretim Hattını Çalıştır</button>
+        <button id="runWebSite" class="secondary">Web Sitesini Hazırla</button>
         <div class="jobbox">
           <h3>Aktif İş</h3>
           <div id="jobInfo">Henüz iş yok.</div>
@@ -365,10 +366,55 @@ Backend / ORM</textarea></label>
           <pre id="reportContent" class="report"></pre>
         </div>
       </section>
+
+      <section id="media" class="panel">
+        <div class="section-head">
+          <div>
+            <h2>6. Medya Kütüphanesi</h2>
+            <p>Görselleri yönetin, sürükle-bırak ile yükleyin ve Markdown referanslarını kopyalayın.</p>
+          </div>
+          <div class="toolbar compact">
+            <button id="refreshMedia" class="secondary">Yenile</button>
+          </div>
+        </div>
+
+        <div id="dropZone" class="drop-zone">
+          <div class="drop-zone-content">
+            <span class="icon">📁</span>
+            <p>Dosyaları buraya sürükleyin veya tıklayarak seçin</p>
+            <input type="file" id="mediaUploadInput" multiple hidden />
+          </div>
+        </div>
+
+        <div id="mediaGrid" class="media-grid"></div>
+      </section>
     </section>
   </main>
 
   <script src="/static/app.js"></script>
+
+  <!-- Code Debug Modal -->
+  <div id="debugModal" class="modal-overlay hidden">
+    <div class="modal-content debug-modal">
+      <div class="modal-header">
+        <h2>Dahili Hata Ayıklama (IDE Mode)</h2>
+        <button id="closeDebug" class="close-btn">&times;</button>
+      </div>
+      <div class="debug-grid">
+        <div class="debug-editor-box">
+          <label>Kaynak Kod (<span id="debugCodeId">-</span>)</label>
+          <textarea id="debugCodeEditor" class="mono huge"></textarea>
+        </div>
+        <div class="debug-output-box">
+          <label>Terminal / Hata Çıktısı</label>
+          <pre id="debugOutput" class="mono"></pre>
+          <div class="toolbar" style="margin-top: auto; padding-top: 20px;">
+            <button id="saveAndTestCode">Kaydet ve Tekrar Test Et</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Project Init Wizard Modal -->
   <div id="initWizardModal" class="modal-overlay hidden">

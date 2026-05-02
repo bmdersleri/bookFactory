@@ -43,7 +43,7 @@ def main(argv=None) -> int:
     ap.add_argument("--stage", default="all", choices=[
         "validate", "merge", "prepare-mermaid", "render-mermaid", "generate-qr",
         "resolve-assets", "inject-qr", "pandoc", "fix-docx", "optimize-tables",
-        "generate-syllabus", "generate-indexing", "all",
+        "generate-syllabus", "generate-indexing", "generate-web-site", "all",
     ])
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
@@ -77,7 +77,7 @@ def main(argv=None) -> int:
     all_stages = [
         "validate", "merge", "prepare-mermaid", "render-mermaid", "generate-qr",
         "resolve-assets", "inject-qr", "pandoc", "fix-docx", "optimize-tables",
-        "generate-syllabus", "generate-indexing"
+        "generate-syllabus", "generate-indexing", "generate-web-site"
     ]
     stages = all_stages if args.stage == "all" else [args.stage]
 
@@ -153,6 +153,18 @@ def main(argv=None) -> int:
             cmd = [sys.executable, str(root / "tools" / "indexing" / "generate_glossary_index.py"), "--manifest", str(manifest_path), "--output-dir", str(output_dir)]
             if run(cmd, cwd=base, dry_run=args.dry_run) != 0: return 1
             report_lines.append(f"- generate-indexing: `{output_dir}`")
+
+    report_path = resolve(base, build.get("report") or "build/reports/post_production_report.md")
+    if report_path and not args.dry_run:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text("\n".join(report_lines) + "\n", encoding="utf-8")
+    
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+f run(cmd, cwd=base, dry_run=args.dry_run) != 0: return 1
+            report_lines.append(f"- generate-web-site: `{output_dir}`")
 
     report_path = resolve(base, build.get("report") or "build/reports/post_production_report.md")
     if report_path and not args.dry_run:

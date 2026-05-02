@@ -2,7 +2,17 @@
 
 All notable changes to BookFactory are documented in this file.
 
-## [3.4.0] - 2026-05-02
+## [3.5.0] - 2026-05-02
+
+### Added
+- **Semantic Consistency Checker:** RAG-supported audit prompts to detect technical and terminological contradictions.
+- **Asset & Media Library:** Studio-integrated drag-and-drop media manager with Markdown link generation and safe file serving.
+- **Digital Twin (Web Release):** Automated MkDocs site generator to transform markdown books into professional documentation websites.
+- **In-Studio Debugging:** IDE-style code editor and terminal output within Studio for direct code block fixes and rapid re-testing.
+
+### Changed
+- Re-modularized Studio services to include `AssetService` and `CodeService`.
+- Unified framework and studio versions to v3.5.0 'Intelligent Quality'.
 
 ### Added
 - **RAG-based Context Memory:** ChromaDB integration for cross-chapter context injection.

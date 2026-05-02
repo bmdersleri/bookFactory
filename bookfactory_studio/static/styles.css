@@ -199,6 +199,29 @@ th { color: var(--muted); font-size: 13px; font-weight: 600; background: #f8fafc
 .preview-box img { max-width: 100%; height: auto; border-radius: 4px; }
 .preview-box blockquote { border-left: 4px solid var(--brand); padding-left: 15px; color: var(--muted); font-style: italic; }
 
+/* Media Library Styles */
+.drop-zone { border: 2px dashed var(--line); border-radius: 16px; padding: 40px; text-align: center; background: var(--soft); transition: all 0.3s; cursor: pointer; margin-bottom: 24px; }
+.drop-zone:hover, .drop-zone.active { border-color: var(--brand); background: #f0f7ff; }
+.drop-zone .icon { font-size: 48px; display: block; margin-bottom: 12px; }
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+.media-item { background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; transition: transform 0.2s; position: relative; }
+.media-item:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+.media-thumb { height: 140px; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid var(--line); }
+.media-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.media-info { padding: 12px; font-size: 12px; }
+.media-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.media-meta { color: var(--muted); margin-bottom: 8px; }
+.media-actions { display: flex; gap: 4px; }
+.media-actions button { flex: 1; padding: 6px; font-size: 11px; }
+
+/* Debug Modal Styles */
+.debug-modal { width: 90vw; max-width: 1200px; }
+.debug-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; height: 70vh; }
+.debug-editor-box, .debug-output-box { display: flex; flex-direction: column; height: 100%; }
+.debug-editor-box textarea { flex: 1; resize: none; border-radius: 8px; font-size: 14px; }
+.debug-output-box pre { flex: 1; background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; overflow: auto; font-size: 13px; border: 1px solid #333; }
+.debug-output-box label { margin-bottom: 8px; color: var(--brand); font-weight: 600; }
+
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; }
   .sidebar { flex-direction: row; overflow-x: auto; }
