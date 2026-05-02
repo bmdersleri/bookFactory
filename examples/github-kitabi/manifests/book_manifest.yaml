@@ -47,6 +47,18 @@ structure:
       title: "GitHub Actions ile CI/CD Temelleri"
       file: "chapter_05.md"
       status: "planned"
+    - id: chapter_06
+      title: "İleri Seviye Git Operasyonları"
+      file: "chapter_06.md"
+      status: "planned"
+    - id: chapter_07
+      title: "Hata Ayıklama ve Kurtarma Senaryoları"
+      file: "chapter_07.md"
+      status: "planned"
+    - id: chapter_08
+      title: "Ekler: Kapsamlı Komut Dizini ve Sözlük"
+      file: "chapter_08.md"
+      status: "planned"
 
 resources:
   - id: sample_repo

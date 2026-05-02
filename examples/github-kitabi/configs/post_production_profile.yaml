@@ -18,19 +18,30 @@ chapters:
     source: "chapters/chapter_04.md"
   - id: chapter_05
     source: "chapters/chapter_05.md"
+  - id: chapter_06
+    source: "chapters/chapter_06.md"
+  - id: chapter_07
+    source: "chapters/chapter_07.md"
+  - id: chapter_08
+    source: "chapters/chapter_08.md"
 
 pandoc:
-  reference_docx: ""   # Varsa referans DOCX yolunu girin
-  lua_filter: ""       # Varsa Lua filter yolunu girin
+  reference_docx: ""
+  lua_filter: ""
 
 mermaid:
   enabled: true
   output_dir: "assets/auto/diagrams"
 
 stages:
-  - merge_chapters
-  - extract_mermaid
+  - validate
+  - merge
+  - prepare-mermaid
   - render_mermaid
+  - generate-qr
+  - resolve-assets
+  - inject-qr
   - build_docx
   - build_html
   - build_epub
+  - generate-web-site
