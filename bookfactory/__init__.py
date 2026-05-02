@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
 """Parametric Computer Book Factory."""
 
-__version__ = "3.8.0"
+__version__ = "3.9.0"
 

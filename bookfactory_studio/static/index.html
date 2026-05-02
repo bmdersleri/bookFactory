@@ -11,7 +11,7 @@
   <header class="topbar">
     <div class="topbar-brand">
       <h1>BookFactory Studio</h1>
-      <span class="vtag">v3.8.0 Smart Layout</span>
+      <span class="vtag">v3.9.0 Adaptive Intelligence</span>
       <p class="fw-path">Framework: <code id="frameworkRoot">yükleniyor…</code></p>
     </div>
     <div class="rootbox">
@@ -200,6 +200,7 @@ Backend / ORM</textarea></label>
           <button class="manifest-tab" data-mtab="mf-scope">Kapsam</button>
           <button class="manifest-tab" data-mtab="mf-automation">Otomasyon</button>
           <button class="manifest-tab" data-mtab="mf-academic">Akademik</button>
+          <button class="manifest-tab" data-mtab="mf-authoring">Yazım Ayarları</button>
           <button class="manifest-tab" data-mtab="mf-glossary">Sözlük & İndeks</button>
           <button class="manifest-tab" data-mtab="mf-paths">Yollar</button>
           <button class="manifest-tab" data-mtab="mf-yaml">YAML</button>
@@ -280,9 +281,38 @@ Backend / ORM</textarea></label>
           <div class="grid2">
             <label>Ders Kodu<input id="mCourseCode" placeholder="CENG201" /></label>
             <label>Ders Adı<input id="mCourseName" placeholder="Nesneye Yönelik Programlama" /></label>
-            <label>AKTS Kredisi<input id="mEcts" type="number" value="5" /></label>
+            <label>AKTS Kredisi<span class="help-icon" data-help="Dersin AKTS kredi yükü.">?</span><input id="mEcts" type="number" value="5" /></label>
           </div>
-          <label>Öğrenme Çıktıları (Satır satır)<textarea id="mLearningOutcomes" class="small"></textarea></label>
+          <label>Öğrenme Çıktıları (Satır satır)<span class="help-icon" data-help="Her satıra bir çıktı yazın.">?</span><textarea id="mLearningOutcomes" class="small"></textarea></label>
+        </div>
+
+        <div id="mf-authoring" class="manifest-panel">
+          <h3>Adaptif Yazım Parametreleri</h3>
+          <div class="grid2">
+            <label>Zorluk Seviyesi<span class="help-icon" data-help="Hedef kitlenin teknik seviyesi (Novice: Yeni başlayan, Expert: Uzman)">?</span><select id="mComplexity">
+              <option>Novice</option>
+              <option selected>Intermediate</option>
+              <option>Expert</option>
+            </select></label>
+            <label>Endüstriyel Bağlam<span class="help-icon" data-help="Örneklerin hangi alandan seçileceği.">?</span><select id="mContext">
+              <option selected>Academic</option>
+              <option>Enterprise</option>
+              <option>Startup</option>
+              <option>Open Source</option>
+            </select></label>
+            <label>Kod İsimlendirme Standartı<select id="mNaming">
+              <option selected>snake_case</option>
+              <option>camelCase</option>
+            </select></label>
+            <label>Tip Belirtme (Type Hinting)<select id="mHinting">
+              <option selected>optional</option>
+              <option>strict</option>
+            </select></label>
+            <label>Matematiksel Yoğunluk<span class="help-icon" data-help="LaTeX kullanımı ve formül derinliği.">?</span><select id="mMath">
+              <option selected>Minimal</option>
+              <option>Heavy</option>
+            </select></label>
+          </div>
         </div>
 
         <div id="mf-glossary" class="manifest-panel">

@@ -2,7 +2,16 @@
 
 All notable changes to BookFactory are documented in this file.
 
-## [3.8.0] - 2026-05-02
+## [3.9.0] - 2026-05-02
+
+### Added
+- **Adaptive Prompt Engine:** Dynamic assembly of LLM instructions based on book profile (Complexity, Context, Coding Standards, Math Rigor).
+- **Prompt Fragment Library:** Reusable markdown blocks in `core/fragments/` for tailored pedagogical guidance.
+- **Studio Authoring Settings:** New manifest editor tab for configuring adaptive parameters.
+
+### Changed
+- Refactored `PromptService` into a fragment-based assembly engine.
+- Enhanced manifest schema with `authoring` block.
 
 ### Added
 - **Smart QR Layout Policy:** Automatically skips QR codes for short snippets (< 15 lines) to improve readability. Supported 'force' and 'auto' policies.

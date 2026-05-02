@@ -271,6 +271,31 @@
       }
     },
 
+    "authoring": {
+      "description": "Adaptif prompt ve yazım parametreleri",
+      "type": "object",
+      "properties": {
+        "complexity_level": { 
+          "type": "string", 
+          "enum": ["Novice", "Intermediate", "Expert"],
+          "default": "Intermediate"
+        },
+        "coding_conventions": {
+          "type": "object",
+          "properties": {
+            "variable_naming": { "type": "string", "enum": ["camelCase", "snake_case"], "default": "snake_case" },
+            "type_hinting": { "type": "string", "enum": ["strict", "optional"], "default": "optional" }
+          }
+        },
+        "math_rigor": { "type": "string", "enum": ["Minimal", "Heavy"], "default": "Minimal" },
+        "industrial_context": { 
+          "type": "string", 
+          "enum": ["Academic", "Enterprise", "Startup", "Open Source"],
+          "default": "Academic" 
+        }
+      }
+    },
+
     "ci": {
       "description": "CI davranışını manifestten yöneten ortak kurallar",
       "type": "object",

@@ -233,14 +233,20 @@ function renderManifestForm() {
   $('mCourseName').value = get(m, 'academic.course_name');
   $('mStyleProfile').value = get(m, 'language.style_profile', 'Academic');
   $('mPedagogicalModel').value = get(m, 'language.pedagogical_model', 'Bloom');
-  
+
+  // Adaptive Authoring fields
+  $('mComplexity').value = get(m, 'authoring.complexity_level', 'Intermediate');
+  $('mContext').value = get(m, 'authoring.industrial_context', 'Academic');
+  $('mNaming').value = get(m, 'authoring.coding_conventions.variable_naming', 'snake_case');
+  $('mHinting').value = get(m, 'authoring.coding_conventions.type_hinting', 'optional');
+  $('mMath').value = get(m, 'authoring.math_rigor', 'Minimal');
+
   $('mCodeExtract').checked = Boolean(get(m, 'code.extract', true));
   $('mCodeTest').checked = Boolean(get(m, 'code.test', true));
   $('mQrThreshold').value = get(m, 'code.qr_threshold_lines', 15);
-  
+
   renderGlossaryRows(); renderManifestChapterRows();
 }
-
 function renderManifestChapterRows() {
   const chapters = manifestData.structure?.chapters || [];
   const tbody = $('manifestChapterRows'); if (!tbody) return;
@@ -267,6 +273,15 @@ async function saveManifestForm() {
   m.academic = m.academic || {}; m.academic.course_code = $('mCourseCode').value; m.academic.course_name = $('mCourseName').value;
   m.language.style_profile = $('mStyleProfile').value; m.language.pedagogical_model = $('mPedagogicalModel').value;
   
+  // Authoring
+  m.authoring = m.authoring || {};
+  m.authoring.complexity_level = $('mComplexity').value;
+  m.authoring.industrial_context = $('mContext').value;
+  m.authoring.coding_conventions = m.authoring.coding_conventions || {};
+  m.authoring.coding_conventions.variable_naming = $('mNaming').value;
+  m.authoring.coding_conventions.type_hinting = $('mHinting').value;
+  m.authoring.math_rigor = $('mMath').value;
+
   m.code = m.code || {};
   m.code.extract = $('mCodeExtract').checked;
   m.code.test = $('mCodeTest').checked;
