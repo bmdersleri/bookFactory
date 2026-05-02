@@ -1,6 +1,6 @@
 /**
- * BookFactory Studio Frontend Orchestrator v3.5
- * Author-Centric & Intelligent Quality Edition
+ * BookFactory Studio Frontend Orchestrator v3.7
+ * User Experience & Authoring Excellence
  */
 
 let project = null;
@@ -26,16 +26,45 @@ function setStatus(msg, type = '') {
   const el = $('status');
   el.textContent = msg;
   el.className = 'status ' + type;
+  if (type === 'good' || type === 'bad' || type === 'warn') {
+    showToast(msg, type === 'good' ? 'success' : (type === 'bad' ? 'error' : 'warning'));
+  }
 }
+
+function showToast(msg, type = 'success') {
+  const container = $('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<div class="toast-msg">${msg}</div><div class="toast-close">&times;</div>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.classList.add('visible'), 10);
+  const close = () => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 400); };
+  toast.onclick = close;
+  setTimeout(close, 5000);
+}
+
+// Tooltip Logic
+document.addEventListener('mouseover', (e) => {
+  const help = e.target.closest('.help-icon');
+  if (help) {
+    const tt = $('tooltip');
+    tt.textContent = help.dataset.help;
+    tt.classList.add('visible');
+    const rect = help.getBoundingClientRect();
+    tt.style.top = (rect.top - tt.offsetHeight - 10) + 'px';
+    tt.style.left = (rect.left + (rect.width/2) - (tt.offsetWidth/2)) + 'px';
+  }
+});
+document.addEventListener('mouseout', (e) => { if (e.target.closest('.help-icon')) $('tooltip').classList.remove('visible'); });
 
 function showTab(name, updateHash = true) {
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('visible', p.id === name));
   if (updateHash) history.replaceState(null, '', '#' + name);
-  
   if (name === 'dashboard') renderDashboard();
   if (name === 'control') renderControlPanel();
-  
+  if (name === 'media') refreshMedia();
   updateStepper(name);
 }
 
@@ -44,10 +73,7 @@ function showManifestTab(name) {
   document.querySelectorAll('.manifest-panel').forEach(p => p.classList.toggle('visible', p.id === name));
 }
 
-function get(obj, path, fallback = '') {
-  return path.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), obj) ?? fallback;
-}
-
+function get(obj, path, fallback = '') { return path.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), obj) ?? fallback; }
 function set(obj, path, value) {
   const parts = path.split('.');
   const last = parts.pop();
@@ -60,108 +86,63 @@ async function loadProject() {
     setStatus('Kitap projesi yükleniyor...');
     const r = $('projectRoot').value.trim() || '.';
     project = await api('/api/project?root=' + encodeURIComponent(r));
-    
     $('emptyState').classList.add('hidden');
     document.querySelectorAll('.panel:not(#emptyState)').forEach(p => p.classList.remove('hidden'));
-    
     controlPanel = await api('/api/control-panel?root=' + encodeURIComponent(r));
     manifestData = structuredClone(project.manifest || {});
     renderDashboard();
     renderControlPanel();
-    renderChapters();
     renderManifestForm();
-    renderReports(project.reports || []);
     await loadPipelineSteps();
     await refreshManifest(false);
-    const valid = project.validation?.valid;
-    setStatus('Kitap projesi yüklendi: ' + project.root, valid ? 'good' : 'warn');
-    
-    if (r && r !== '.') {
-      try {
-        const cfg = await api('/api/studio/config', {method: 'POST', body: JSON.stringify({active_book: r})});
-        renderRecentBooks(cfg.recent_books || []);
-      } catch {}
-    }
+    setStatus('Kitap projesi yüklendi: ' + project.root, 'good');
   } catch (e) {
-    if (e.message.includes('manifest.yaml bulunamadı')) {
+    if (e.message.includes('bulunamadı')) {
       $('emptyState').classList.remove('hidden');
       document.querySelectorAll('.panel:not(#emptyState)').forEach(p => p.classList.add('hidden'));
-      setStatus('Lütfen bir kitap projesi seçin veya oluşturun.', 'warn');
-    } else {
-      setStatus('Hata: ' + e.message, 'bad');
-    }
+    } else setStatus('Hata: ' + e.message, 'bad');
   }
 }
 
-function renderRecentBooks(roots) {
-  const select = $('recentBooksSelect');
-  if (!select) return;
-  const first = select.options[0];
-  select.innerHTML = '';
-  select.appendChild(first);
-  roots.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r;
-    opt.textContent = r.split(/[\\/]/).pop() || r;
-    opt.title = r;
-    select.appendChild(opt);
-  });
-}
-
-function statusLabel(status) {
-  if (status === 'ok') return '<span class="file-ok">OK</span>';
-  if (status === 'fail') return '<span class="file-missing">FAIL</span>';
-  return '<span class="warn">WARN</span>';
+// Markdown Toolbar Logic
+function insertMD(type) {
+  const area = $('chapterContent');
+  const start = area.selectionStart, end = area.selectionEnd, text = area.value;
+  const selection = text.substring(start, end);
+  let insert = "";
+  switch(type) {
+    case 'bold': insert = `**${selection || 'kalın'}**`; break;
+    case 'italic': insert = `*${selection || 'eğik'}*`; break;
+    case 'code': insert = `\`${selection || 'kod'}\``; break;
+    case 'block': insert = `\n\`\`\`python\n${selection || '# kod'}\n\`\`\`\n`; break;
+    case 'table': insert = `\n| B1 | B2 |\n|---|---|\n| H1 | H2 |\n`; break;
+    case 'link': insert = `[${selection || 'link'}](https://)`; break;
+  }
+  area.value = text.substring(0, start) + insert + text.substring(end);
+  area.focus(); updateMarkdownPreview();
 }
 
 function updateMarkdownPreview() {
-  const content = $('chapterContent').value;
-  if (window.marked) {
-    $('markdownPreview').innerHTML = marked.parse(content);
-  }
+  if (window.marked) $('markdownPreview').innerHTML = marked.parse($('chapterContent').value);
 }
 
 let progressChart = null;
-
 function renderCharts(matrix) {
-  const counts = { final: 0, draft: 0, planned: 0, error: 0 };
+  const counts = { final: 0, total: matrix.length || 1 };
   const heatmap = $('healthHeatmap');
   heatmap.innerHTML = '';
-  
   matrix.forEach(r => {
-    let statusClass = `status-${r.status}`;
-    if (r.code_tests?.failed > 0) statusClass = 'status-error';
-    
-    counts[r.status === 'final' ? 'final' : (r.status === 'draft' ? 'draft' : 'planned')]++;
-    if (statusClass === 'status-error') counts.error++;
-
+    if (r.status === 'final') counts.final++;
     const box = document.createElement('div');
-    box.className = `heatmap-box ${statusClass}`;
+    box.className = `heatmap-box status-${r.status}${r.code_tests?.failed > 0 ? ' status-error' : ''}`;
     box.textContent = r.order;
-    box.title = `${r.id}: ${r.title}`;
     box.onclick = () => { $('importChapterId').value = r.id; showTab('chapters'); };
     heatmap.appendChild(box);
   });
-
-  const total = matrix.length || 1;
-  const percent = Math.round((counts.final / total) * 100);
-  
+  const percent = Math.round((counts.final / counts.total) * 100);
   if (progressChart) progressChart.destroy();
   const ctx = $('progressChart').getContext('2d');
-  progressChart = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      datasets: [{
-        data: [counts.final, total - counts.final],
-        backgroundColor: ['#126b3f', '#e9ecef'],
-        borderWidth: 0,
-        circumference: 360,
-        rotation: 0
-      }]
-    },
-    options: { cutout: '80%', plugins: { tooltip: { enabled: false } } }
-  });
-  
+  progressChart = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [counts.final, counts.total - counts.final], backgroundColor: ['#126b3f', '#e9ecef'], borderWidth: 0 }] }, options: { cutout: '80%', plugins: { tooltip: { enabled: false } } } });
   document.querySelector('.chart-label').textContent = `%${percent}`;
 }
 
@@ -170,63 +151,28 @@ function renderDashboard() {
   $('bookTitle').textContent = m.book?.title || '-';
   $('bookAuthor').textContent = m.book?.author || '-';
   $('chapterCount').textContent = (project?.chapters || []).length;
-  $('manifestState').textContent = project?.validation?.valid ? 'Geçerli' : 'Sorun var';
-  
   const matrix = controlPanel?.chapter_matrix || [];
   if (matrix.length) renderCharts(matrix);
-
-  const warn = $('bookRootWarning');
-...  if (project?.is_framework_root) {
-    warn.classList.remove('hidden');
-    warn.innerHTML = '<strong>Yanlış kök seçilmiş olabilir.</strong> BookFactory framework klasörü yerine doğrudan kitap klasörünü seçin.';
-  } else {
-    warn.classList.add('hidden');
-  }
-  const counts = project?.chapter_status_counts || {};
-  $('statusCounts').innerHTML = Object.entries(counts).map(([k,v]) => `<span class="pill">${escapeHtml(k)}: ${v}</span>`).join('');
-  const reports = (project?.reports || []).slice(0, 6);
-  $('recentReports').innerHTML = reports.map(r => `<div class="item">${escapeHtml(r.path)}<br><small>${r.size} bayt</small></div>`).join('');
   updateSmartGuide();
 }
 
 function updateSmartGuide() {
   if (!project) return;
-  const m = project.manifest || {};
-  const matrix = controlPanel?.chapter_matrix || [];
-  const missingFiles = matrix.filter(r => !r.full_text).length;
-  const failedTests = controlPanel?.code_tests?.summary?.failed || 0;
-  
-  let nextAction = { text: "Projeniz harika görünüyor! Üretim aşamasına geçebilirsiniz.", btn: "Üretimi Başlat", tab: "production" };
-  let currentStepTab = "dashboard";
-
-  if (!m.book?.title || m.book.title === 'Yeni Kitap' || m.book.title === '-') {
-    nextAction = { text: "Kitap bilgileri henüz girilmemiş. Lütfen temel bilgileri düzenleyin.", btn: "Manifesti Düzenle", tab: "manifest" };
-    currentStepTab = "manifest";
-  } else if (!m.structure?.chapters || m.structure.chapters.length === 0) {
-    nextAction = { text: "Bölüm listesi boş. Kitap Sihirbazı ile mimariyi kurgulayabilirsiniz.", btn: "Sihirbaza Git", tab: "wizard" };
-    currentStepTab = "wizard";
-  } else if (missingFiles > 0) {
-    nextAction = { text: `${missingFiles} bölüm dosyası henüz yazılmamış. Yazıma başlayın.`, btn: "Bölümleri Yönet", tab: "chapters" };
-    currentStepTab = "chapters";
-  } else if (failedTests > 0) {
-    nextAction = { text: "Kod testlerinde hatalar tespit edildi. Lütfen düzeltmeleri yapın.", btn: "Kontrol Paneli", tab: "control" };
-    currentStepTab = "control";
-  } else {
-    currentStepTab = "production";
-  }
-
-  $('guideText').textContent = nextAction.text;
-  $('guideActionBtn').textContent = nextAction.btn;
-  $('guideActionBtn').onclick = () => showTab(nextAction.tab);
-  $('smartGuide').classList.remove('hidden');
-  updateStepper(currentStepTab);
+  const m = project.manifest || {}, matrix = controlPanel?.chapter_matrix || [];
+  const missing = matrix.filter(r => !r.full_text).length;
+  let next = { text: "Hazırsınız!", btn: "Üretim", tab: "production" };
+  if (!m.book?.title) next = { text: "Kitap bilgileri eksik.", btn: "Düzenle", tab: "manifest" };
+  else if (missing > 0) next = { text: `${missing} bölüm yazılmamış.`, btn: "Yaz", tab: "chapters" };
+  $('guideText').textContent = next.text;
+  $('guideActionBtn').textContent = next.btn;
+  $('guideActionBtn').onclick = () => showTab(next.tab);
+  updateStepper(next.tab);
 }
 
 function updateStepper(activeTab) {
-  const steps = document.querySelectorAll('.step');
   const tabToStep = { 'wizard': 1, 'manifest': 1, 'chapters': 2, 'control': 3, 'production': 5, 'dashboard': 1 };
   const currentStep = tabToStep[activeTab] || 1;
-  steps.forEach(s => {
+  document.querySelectorAll('.step').forEach(s => {
     const stepNum = parseInt(s.dataset.step);
     s.classList.toggle('active', stepNum === currentStep);
     s.classList.toggle('done', stepNum < currentStep);
@@ -234,302 +180,113 @@ function updateStepper(activeTab) {
 }
 
 function renderControlPanel() {
-  const data = controlPanel || {};
-  const health = data.health || {};
-  const checks = health.checks || [];
-  $('healthPanel').innerHTML = checks.length ? checks.map(x => (
-    `<div class="item">${statusLabel(x.status)} <strong>${escapeHtml(x.name)}</strong><br><small>${escapeHtml(x.detail || '')}</small></div>`
-  )).join('') : '<div class="item">Sağlık verisi yok.</div>';
-
-  const matrix = data.chapter_matrix || [];
-  $('chapterMatrixTable').querySelector('tbody').innerHTML = matrix.length ? matrix.map(r => (
-    `<tr>
-      <td>${r.order}</td>
-      <td><code>${escapeHtml(r.id)}</code><br><small>${escapeHtml(r.title)}</small></td>
-      <td>${escapeHtml(r.status)}</td>
-      <td>${r.full_text ? `✅ <button class="smallbtn" onclick="startConsistencyAudit('${r.id}')">Denetle</button>` : `<button class="smallbtn warn" onclick="generateSingleChapterPrompt('${r.id}')">Prompt Üret</button>`}</td>
-      <td>${r.quality_report ? '✅' : '❌'}</td>
-      <td>${r.code_tests?.failed > 0 ? '❌' : '✅'}</td>
-      <td>${r.screenshots?.missing_files?.length > 0 ? '❌' : '✅'}</td>
-    </tr>`
-  )).join('') : '<tr><td colspan="7">Veri yok.</td></tr>';
-
+  const data = controlPanel || {}, matrix = data.chapter_matrix || [];
+  $('chapterMatrixTable').querySelector('tbody').innerHTML = matrix.map(r => (
+    `<tr><td>${r.order}</td><td><code>${r.id}</code></td><td>${r.status}</td><td>${r.full_text ? `✅ <button class="smallbtn" onclick="startConsistencyAudit('${r.id}')">Audit</button> <button class="smallbtn secondary" onclick="startEditorReview('${r.id}')">Editör</button>` : `<button class="smallbtn warn" onclick="generateSingleChapterPrompt('${r.id}')">Prompt</button>`}</td><td>${r.quality_report?'✅':'❌'}</td><td>${r.code_tests?.failed>0?'❌':'✅'}</td><td>${r.screenshots?.missing_files?.length>0?'❌':'✅'}</td></tr>`
+  )).join('');
   const failed = data.code_tests?.failed || [];
-  $('repairPanel').innerHTML = failed.length ? failed.map(item => (
-    `<div class="item">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <strong>${escapeHtml(item.id)}</strong>
-        <button class="smallbtn" onclick="copyRepairPrompt('${item.id}')">Tamir Promptu</button>
-      </div>
-      <small style="color:var(--bad)">${escapeHtml(item.failure_reason)}</small>
-    </div>`
-  )).join('') : '<div class="item">Hata yok.</div>';
+  $('repairPanel').innerHTML = failed.map(item => `<div class="item"><strong>${item.id}</strong> <button class="smallbtn" onclick="openDebugger('${item.chapter_id}', '${item.id}')">Hata Ayıkla</button></div>`).join('') || '<div class="item">Hata yok.</div>';
 }
 
-async function copyRepairPrompt(codeId) {
-  try {
-    const res = await api(`/api/jobs/repair-prompt/${codeId}?root=${encodeURIComponent($('projectRoot').value)}`);
-    await navigator.clipboard.writeText(res.prompt);
-    setStatus('Tamir promptu kopyalandı.', 'good');
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
-}
-
-async function startConsistencyAudit(chapterId) {
-  try {
-    setStatus(`${chapterId} için tutarlılık denetimi başlatılıyor...`, 'warn');
-    const job = await api(`/api/chapters/consistency-audit/${chapterId}?root=${encodeURIComponent($('projectRoot').value)}`, { method: 'POST' });
-    pollJob(job.id);
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
-}
-
-async function generateSingleChapterPrompt(chapterId) {
-  try {
-    setStatus(`${chapterId} için prompt üretiliyor...`, 'warn');
-    const body = { root: $('projectRoot').value, step: 'generate_chapter_prompts', options: { chapter_id: chapterId } };
-    const job = await api('/api/jobs', { method: 'POST', body: JSON.stringify(body) });
-    pollJob(job.id);
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
-}
+async function startConsistencyAudit(cid) { const job = await api(`/api/chapters/consistency-audit/${cid}?root=${encodeURIComponent($('projectRoot').value)}`, { method: 'POST' }); pollJob(job.id); }
+async function startEditorReview(cid) { const job = await api(`/api/chapters/editor-review/${cid}?root=${encodeURIComponent($('projectRoot').value)}`, { method: 'POST' }); pollJob(job.id); }
+async function generateSingleChapterPrompt(cid) { const job = await api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: 'generate_chapter_prompts', options: { chapter_id: cid } }) }); pollJob(job.id); }
 
 async function openDebugger(chapterId, codeId) {
-  try {
-    setStatus('Kod yükleniyor...', 'warn');
-    const res = await api(`/api/code/block/${chapterId}/${codeId}?root=${encodeURIComponent($('projectRoot').value)}`);
-    const codeTests = controlPanel.code_tests.failed || [];
-    const errorItem = codeTests.find(x => x.id === codeId);
-    
-    let errorLog = "Hata kaydı bulunamadı.";
-    if (errorItem && errorItem.steps) {
-        errorLog = errorItem.steps.map(s => `--- STEP: ${s.name} ---\n${s.stderr || s.stdout || ''}`).join('\n\n');
-    }
-
-    $('debugCodeId').textContent = codeId;
-    $('debugCodeEditor').value = res.code;
-    $('debugOutput').textContent = errorLog;
-    $('debugModal').classList.remove('hidden');
-    
-    // Attach current IDs to the save button
-    $('saveAndTestCode').dataset.chapterId = chapterId;
-    $('saveAndTestCode').dataset.codeId = codeId;
-    
-    setStatus('Hata ayıklama modu aktif.', 'good');
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+  const res = await api(`/api/code/block/${chapterId}/${codeId}?root=${encodeURIComponent($('projectRoot').value)}`);
+  $('debugCodeId').textContent = codeId; $('debugCodeEditor').value = res.code; $('debugModal').classList.remove('hidden');
+  $('saveAndTestCode').dataset.chapterId = chapterId; $('saveAndTestCode').dataset.codeId = codeId;
 }
 
 async function saveAndTestCode() {
   const btn = $('saveAndTestCode');
-  const chapterId = btn.dataset.chapterId;
-  const codeId = btn.dataset.codeId;
-  const code = $('debugCodeEditor').value;
-
-  try {
-    setStatus('Kod kaydediliyor...', 'warn');
-    await api('/api/code/update', {
-      method: 'POST',
-      body: JSON.stringify({
-        root: $('projectRoot').value,
-        chapter_id: chapterId,
-        code_id: codeId,
-        code: code
-      })
-    });
-    
-    setStatus('Kod güncellendi. Test başlatılıyor...', 'warn');
-    // Re-run code tests (minimal context)
-    const job = await api('/api/jobs', {
-      method: 'POST',
-      body: JSON.stringify({
-        root: $('projectRoot').value,
-        step: 'test_code',
-        options: {}
-      })
-    });
-    
-    $('debugModal').classList.add('hidden');
-    pollJob(job.id);
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+  await api('/api/code/update', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, chapter_id: btn.dataset.chapterId, code_id: btn.dataset.codeId, code: $('debugCodeEditor').value }) });
+  const job = await api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: 'test_code', options: {} }) });
+  $('debugModal').classList.add('hidden'); pollJob(job.id);
 }
-
-$('closeDebug').addEventListener('click', () => $('debugModal').classList.add('hidden'));
-$('saveAndTestCode').addEventListener('click', saveAndTestCode);
 
 async function pollJob(jobId) {
   const poll = async () => {
     try {
       const job = await api('/api/jobs/' + jobId);
-      activeJobId = jobId;
       const log = await api(`/api/jobs/${jobId}/log?root=${encodeURIComponent($('projectRoot').value)}`);
       $('jobLog').textContent = log;
-      $('jobLog').scrollTop = $('jobLog').scrollHeight;
       if (job.status === 'running' || job.status === 'queued') setTimeout(poll, 1500);
-      else { setStatus('İş tamamlandı: ' + job.status, job.status === 'success' ? 'good' : 'bad'); await loadProject(); }
+      else { setStatus('İş tamamlandı: ' + job.status, 'good'); await loadProject(); }
     } catch (e) { console.error(e); }
   };
   poll();
 }
 
 async function refreshManifest(updateForm = true) {
-  try {
-    const data = await api('/api/manifest?root=' + encodeURIComponent($('projectRoot').value));
-    manifestData = data.manifest;
-    $('manifestYaml').value = data.yaml;
-    if (updateForm) renderManifestForm();
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
+  const data = await api('/api/manifest?root=' + encodeURIComponent($('projectRoot').value));
+  manifestData = data.manifest; $('manifestYaml').value = data.yaml;
+  if (updateForm) renderManifestForm();
 }
 
 function renderManifestForm() {
-  const m = manifestData;
-  if (!m) return;
+  const m = manifestData; if (!m) return;
   $('mBookTitle').value = get(m, 'book.title');
   $('mBookAuthor').value = get(m, 'book.author');
   $('mCourseCode').value = get(m, 'academic.course_code');
   $('mCourseName').value = get(m, 'academic.course_name');
-  renderGlossaryRows();
+  $('mStyleProfile').value = get(m, 'language.style_profile', 'Academic');
+  $('mPedagogicalModel').value = get(m, 'language.pedagogical_model', 'Bloom');
+  renderGlossaryRows(); renderManifestChapterRows();
+}
+
+function renderManifestChapterRows() {
+  const chapters = manifestData.structure?.chapters || [];
+  const tbody = $('manifestChapterRows'); if (!tbody) return;
+  tbody.innerHTML = chapters.map((ch, idx) => `<tr data-idx="${idx}"><td class="drag-handle">☰</td><td>${idx+1}</td><td><input class="c-id" value="${escapeHtml(ch.id)}" /></td><td><input class="c-title" value="${escapeHtml(ch.title)}" /></td><td><input class="c-file" value="${escapeHtml(ch.file || '')}" /></td><td><select class="c-status"><option ${ch.status==='planned'?'selected':''}>planned</option><option ${ch.status==='draft'?'selected':''}>draft</option><option ${ch.status==='final'?'selected':''}>final</option></select></td><td><button class="smallbtn danger" onclick="removeChapterRow(${idx})">Sil</button></td></tr>`).join('');
+  if (!window.manifestSortable) window.manifestSortable = new Sortable(tbody, { handle: '.drag-handle', onEnd: () => {
+    const news = []; tbody.querySelectorAll('tr').forEach(tr => news.push(manifestData.structure.chapters[parseInt(tr.dataset.idx)]));
+    manifestData.structure.chapters = news; renderManifestChapterRows();
+  }});
 }
 
 function renderGlossaryRows() {
   const terms = get(manifestData, 'glossary', []);
-  const tbody = $('manifestGlossaryRows');
-  if (!tbody) return;
-  tbody.innerHTML = terms.map((t, idx) => (
-    `<tr>
-      <td><input class="g-term" value="${escapeHtml(t.term)}" /></td>
-      <td><input class="g-def" value="${escapeHtml(t.definition)}" /></td>
-      <td><button class="smallbtn danger" onclick="removeGlossaryRow(${idx})">Sil</button></td>
-    </tr>`
-  )).join('');
+  const tbody = $('manifestGlossaryRows'); if (!tbody) return;
+  tbody.innerHTML = terms.map((t, idx) => `<tr><td><input class="g-term" value="${escapeHtml(t.term)}" /></td><td><input class="g-def" value="${escapeHtml(t.definition)}" /></td><td><button class="smallbtn danger" onclick="removeGlossaryRow(${idx})">Sil</button></td></tr>`).join('');
 }
 
-function addGlossaryRow() {
-  if (!manifestData.glossary) manifestData.glossary = [];
-  manifestData.glossary.push({term: 'Yeni Terim', definition: ''});
-  renderGlossaryRows();
+function addGlossaryRow() { if (!manifestData.glossary) manifestData.glossary = []; manifestData.glossary.push({term: 'Yeni', definition: ''}); renderGlossaryRows(); }
+function removeGlossaryRow(idx) { manifestData.glossary.splice(idx, 1); renderGlossaryRows(); }
+function removeChapterRow(idx) { manifestData.structure.chapters.splice(idx, 1); renderManifestChapterRows(); }
+
+async function saveManifestForm() {
+  const m = structuredClone(manifestData);
+  m.book.title = $('mBookTitle').value; m.book.author = $('mBookAuthor').value;
+  m.academic = m.academic || {}; m.academic.course_code = $('mCourseCode').value; m.academic.course_name = $('mCourseName').value;
+  m.language.style_profile = $('mStyleProfile').value; m.language.pedagogical_model = $('mPedagogicalModel').value;
+  await api('/api/manifest/save', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, manifest: m }) });
+  setStatus('Kaydedildi.', 'good'); await loadProject();
 }
-
-function removeGlossaryRow(idx) {
-  manifestData.glossary.splice(idx, 1);
-  renderGlossaryRows();
-}
-
-async function startJob(step) {
-  try {
-    const body = { root: $('projectRoot').value, step, options: JSON.parse($('jobOptions').value || '{}') };
-    const job = await api('/api/jobs', { method: 'POST', body: JSON.stringify(body) });
-    pollJob(job.id);
-  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
-}
-
-// Event Listeners
-$('loadProject').addEventListener('click', loadProject);
-$('toggleDarkMode').addEventListener('click', () => {
-  const isDark = document.body.classList.toggle('dark-mode');
-  localStorage.setItem('darkMode', isDark);
-});
-if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
-
-$('chapterContent').addEventListener('input', updateMarkdownPreview);
-$('addGlossaryTerm').addEventListener('click', addGlossaryRow);
-$('runStep').addEventListener('click', () => startJob($('pipelineStep').value));
-$('runFull').addEventListener('click', () => startJob('full_production'));
-$('runWebSite').addEventListener('click', () => startJob('generate-web-site'));
-
-// Keyboard Shortcuts
-window.addEventListener('keydown', (e) => {
-  if (e.altKey && e.key >= '1' && e.key <= '7') {
-    const tabs = ['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports'];
-    showTab(tabs[parseInt(e.key) - 1]);
-  }
-});
 
 async function refreshMedia() {
-  try {
-    const data = await api('/api/assets?root=' + encodeURIComponent($('projectRoot').value));
-    renderMedia(data.assets || []);
-    setStatus('Medya kütüphanesi yenilendi.', 'good');
-  } catch (e) { setStatus('Medya listeleme hatası: ' + e.message, 'bad'); }
-}
-
-function renderMedia(assets) {
-  const grid = $('mediaGrid');
-  grid.innerHTML = assets.map(a => `
-    <div class="media-item">
-      <div class="media-thumb">
-        <img src="/api/project/file?path=${encodeURIComponent(a.rel_path)}&root=${encodeURIComponent($('projectRoot').value)}" alt="${escapeHtml(a.name)}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y4ZmFmYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTRhM2I4IiBmb250LXNpemU9IjE0Ij5Hw7Zyc2VsPC90ZXh0Pjwvc3ZnPg=='">
-      </div>
-      <div class="media-info">
-        <div class="media-name" title="${escapeHtml(a.name)}">${escapeHtml(a.name)}</div>
-        <div class="media-meta">${a.type.toUpperCase()} · ${(a.size/1024).toFixed(1)} KB</div>
-        <div class="media-actions">
-          <button class="smallbtn" onclick="copyMarkdownLink('${a.rel_path}', '${a.name}')">MD Link</button>
-          <button class="smallbtn secondary" onclick="window.open('/api/project/file?path=${encodeURIComponent(a.rel_path)}&root=${encodeURIComponent($('projectRoot').value)}', '_blank')">Aç</button>
-        </div>
-      </div>
-    </div>
-  `).join('');
+  const data = await api('/api/assets?root=' + encodeURIComponent($('projectRoot').value));
+  $('mediaGrid').innerHTML = data.assets.map(a => `<div class="media-item"><div class="media-thumb"><img src="/api/project/file?path=${encodeURIComponent(a.rel_path)}&root=${encodeURIComponent($('projectRoot').value)}"></div><div class="media-info"><div class="media-name">${escapeHtml(a.name)}</div><button class="smallbtn" onclick="copyMarkdownLink('${a.rel_path}', '${a.name}')">Link</button></div></div>`).join('');
 }
 
 async function copyMarkdownLink(path, name) {
-  // Use relative path from chapters/ for markdown
-  const mdPath = path.replace('assets/', '../assets/');
-  const link = `![${name.split('.')[0]}](${mdPath})`;
-  await navigator.clipboard.writeText(link);
-  setStatus('Markdown görsel linki kopyalandı.', 'good');
+  await navigator.clipboard.writeText(`![${name.split('.')[0]}](../${path})`);
+  showToast('Link kopyalandı.');
 }
 
-async function uploadFiles(files) {
-  for (const file of files) {
-    try {
-      setStatus(`${file.name} yükleniyor...`, 'warn');
-      const formData = new FormData();
-      formData.append('file', file);
-      await api(`/api/assets/upload?root=${encodeURIComponent($('projectRoot').value)}`, {
-        method: 'POST',
-        body: formData
-      });
-      setStatus(`${file.name} başarıyla yüklendi.`, 'good');
-    } catch (e) { setStatus('Yükleme hatası: ' + e.message, 'bad'); }
-  }
-  refreshMedia();
-}
+// Global Init
+$('loadProject').addEventListener('click', loadProject);
+$('toggleDarkMode').addEventListener('click', () => { localStorage.setItem('darkMode', document.body.classList.toggle('dark-mode')); });
+if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+$('chapterContent').addEventListener('input', updateMarkdownPreview);
+$('addGlossaryTerm').addEventListener('click', addGlossaryRow);
+$('saveManifestForm').addEventListener('click', saveManifestForm);
+$('closeDebug').addEventListener('click', () => $('debugModal').classList.add('hidden'));
+$('saveAndTestCode').addEventListener('click', saveAndTestCode);
+$('runStep').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: $('pipelineStep').value, options: JSON.parse($('jobOptions').value || '{}') }) }).then(j => pollJob(j.id)); });
+$('runWebSite').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({root: $('projectRoot').value, step: 'generate-web-site', options: {}}) }).then(j => pollJob(j.id)); });
+window.addEventListener('keydown', (e) => { if (e.altKey && e.key >= '1' && e.key <= '8') showTab(['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports', 'media'][parseInt(e.key)-1]); });
+async function loadPipelineSteps() { const data = await api('/api/pipeline/steps'); $('pipelineStep').innerHTML = data.steps.map(s => `<option value="${s.id}">${s.title}</option>`).join(''); }
 
-// Drag & Drop Listeners
-const dropZone = $('dropZone');
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('active'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
-dropZone.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dropZone.classList.remove('active');
-  if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
-});
-dropZone.addEventListener('click', () => $('mediaUploadInput').click());
-$('mediaUploadInput').addEventListener('change', (e) => {
-  if (e.target.files.length) uploadFiles(e.target.files);
-});
-$('refreshMedia').addEventListener('click', refreshMedia);
-
-async function loadPipelineSteps() {
-  const data = await api('/api/pipeline/steps');
-  $('pipelineStep').innerHTML = data.steps.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
-}
-
-function initStudio() {
-  loadProject();
-}
-
-initStudio();
-e.addEventListener('click', () => $('mediaUploadInput').click());
-$('mediaUploadInput').addEventListener('change', (e) => {
-  if (e.target.files.length) uploadFiles(e.target.files);
-});
-$('refreshMedia').addEventListener('click', refreshMedia);
-
-async function loadPipelineSteps() {
-  const data = await api('/api/pipeline/steps');
-  $('pipelineStep').innerHTML = data.steps.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
-}
-
-function initStudio() {
-  loadProject();
-}
-
-initStudio();
+loadProject();
+loadPipelineSteps();

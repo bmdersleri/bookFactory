@@ -47,7 +47,12 @@ class ManifestService:
         m["schema"].setdefault("manifest_version", "1.0")
         
         # Language
-        m.setdefault("language", {"primary_language": "tr", "output_languages": ["tr"]})
+        m.setdefault("language", {
+            "primary_language": "tr", 
+            "output_languages": ["tr"],
+            "style_profile": "Academic",
+            "pedagogical_model": "Bloom"
+        })
         
         # Quality Gates
         m.setdefault("quality_gates", QUALITY_GATE_DEFAULTS.copy())

@@ -269,6 +269,29 @@ def consistency_audit(chapter_id: str, root: str = Query(".")) -> dict[str, Any]
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/api/chapters/editor-review/{chapter_id}")
+def editor_review(chapter_id: str, root: str = Query(".")) -> dict[str, Any]:
+    try:
+        r = PathService.project_root(root)
+        manifest_path = ManifestService.find(r)
+        if not manifest_path:
+            raise HTTPException(status_code=400, detail="Manifest bulunamadı.")
+
+        manifest = ManifestService.load(manifest_path)
+        chapter = None
+        for i, ch in enumerate(ManifestService.chapters_from_manifest(manifest), 1):
+            if ManifestService.chapter_id(ch, i) == chapter_id:
+                chapter = ch
+                break
+
+        if not chapter:
+            raise HTTPException(status_code=404, detail="Bölüm bulunamadı.")
+
+        job = create_job(r, "editor_review", {"chapter_id": chapter_id})
+        return asdict(job)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
 
 @app.get("/api/pipeline/steps")
 def steps() -> dict[str, Any]:

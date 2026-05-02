@@ -214,7 +214,6 @@ def _execute_step(step: str, root: Path, log_path: Path, options: dict[str, Any]
             _append(log_path, f"[FAIL] Bölüm bulunamadı: {cid}")
             return 1
         # Find chapter markdown file path
-        # In jobs, we need the relative order 'i' to resolve path if 'id' is used
         idx = -1
         for i, ch in enumerate(ManifestService.chapters_from_manifest(manifest), 1):
             if ManifestService.chapter_id(ch, i) == cid:
@@ -222,6 +221,31 @@ def _execute_step(step: str, root: Path, log_path: Path, options: dict[str, Any]
                 break
         cfile = PathService.chapter_markdown_path(root, chapter, idx)
         return _run_subprocess([_python(), _tool("tools", "quality", "semantic_consistency.py"), "--chapter-id", cid, "--chapter-file", str(cfile), "--root", str(root), "--output", f"build/reports/{cid}_consistency_audit_prompt.md"], root, log_path)
+
+    if step == "editor_review":
+        cid = options.get("chapter_id")
+        if not cid:
+            _append(log_path, "[FAIL] chapter_id eksik.")
+            return 1
+        from .services.manifest_service import ManifestService
+        from .services.path_service import PathService
+        m_path = ManifestService.find(root)
+        if not m_path:
+            _append(log_path, "[FAIL] manifest bulunamadı.")
+            return 1
+        manifest = ManifestService.load(m_path)
+        chapter = next((ch for i, ch in enumerate(ManifestService.chapters_from_manifest(manifest), 1) if ManifestService.chapter_id(ch, i) == cid), None)
+        if not chapter:
+            _append(log_path, f"[FAIL] Bölüm bulunamadı: {cid}")
+            return 1
+        idx = -1
+        for i, ch in enumerate(ManifestService.chapters_from_manifest(manifest), 1):
+            if ManifestService.chapter_id(ch, i) == cid:
+                idx = i
+                break
+        cfile = PathService.chapter_markdown_path(root, chapter, idx)
+        return _run_subprocess([_python(), _tool("tools", "quality", "generate_editor_prompt.py"), "--chapter-id", cid, "--chapter-file", str(cfile), "--root", str(root), "--output", f"build/reports/{cid}_editor_review_prompt.md"], root, log_path)
+
     if step == "full_production":
         sequence = ["validate_manifest", "outline_check", "extract_code", "validate_code", "test_code", "mermaid_extract", "mermaid_render", "qr_manifest", "qr_generate", "codespaces_check", "export"]
         for sub in sequence:

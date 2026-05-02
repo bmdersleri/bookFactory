@@ -76,21 +76,24 @@ Dosyalar kitap proje kökünde şu yola yazılır:
 
 {chapter.key_concepts — varsa manifestten}
 
-## 6. Beklenen bölüm yapısı
+## 6. Beklenen bölüm yapısı (Bloom Taksonomisi Uyumlu)
 
-Bölüm aşağıdaki yapıyı izlemelidir:
+Bölüm aşağıdaki eğitsel akışı (pedagogical flow) izlemelidir:
 
-1. Bölümün amacı ve öğrenme çıktıları (kısa giriş)
-2. Temel kavramlar ve tanımlar
-3. Kavramları açıklayan kısa, çalıştırılabilir kod örnekleri
-4. {cumulative_app.name} uygulamasına bu bölümün katkısı
-5. Adım adım uygulama geliştirme
-6. Mermaid diyagramları (gerekirse `mermaid` kod bloğu olarak)
-7. Screenshot planı (gerekirse `[SCREENSHOT:{chapter_id}_01_aciklama]` formatıyla)
-8. Mini uygulama görevi
-9. Sık yapılan hatalar ve çözümleri
-10. Bölüm sonu kontrol listesi
-11. Kısa özet
+1. **Hatırlama ve Giriş:** Bölümün amacı, öğrenme çıktıları ve önceki bölümlerle bağlantı.
+2. **Kavrama (Teorik Temel):** Temel kavramlar, tanımlar ve "neden" sorularına cevaplar.
+3. **Uygulama (Pratik Uygulama):** 
+    - Kavramları açıklayan kısa, çalıştırılabilir kod örnekleri.
+    - {cumulative_app.name} uygulamasına bu bölümün katkısı.
+    - Adım adım uygulama geliştirme süreci.
+4. **Analiz ve Derinleşme:** 
+    - Kodun nasıl çalıştığının analizi.
+    - Mermaid diyagramları ile mimari görselleştirme.
+    - Sık yapılan hatalar ve çözümleri.
+5. **Sentez ve Değerlendirme:**
+    - Mini uygulama görevi veya alıştırmalar.
+    - Bölüm sonu kontrol listesi.
+    - Özet.
 
 ## 7. Kod üretim kuralları
 
@@ -143,7 +146,9 @@ approval_gates:
 ## 10. Üslup ve dil
 
 - **İçerik dili:** {language.primary_language}
-- **Üslup:** akıcı, öğretici, uygulamalı, akademik doğruluğa sahip
+- **Üslup Profili:** {language.style_profile} (Bu profile sıkı sıkıya uyun)
+- **Eğitsel Model:** {language.pedagogical_model}
+- **Ton:** akıcı, öğretici, uygulamalı, akademik doğruluğa sahip
 - **Başlıklar:** manuel numara içerme; numaralandırma build aşamasında yapılacak
 - **Dosya/kimlik adları:** küçük harfli, ASCII, boşluk ve Türkçe karakter içermez
 - **Kapsam dışı konular** ana öğretim akışına sızmamalı

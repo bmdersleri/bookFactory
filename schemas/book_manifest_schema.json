@@ -96,6 +96,18 @@
           "type": "string",
           "enum": ["en"],
           "default": "en"
+        },
+        "style_profile": { 
+          "type": "string", 
+          "enum": ["Academic", "Practical", "Storytelling", "Reference"],
+          "default": "Academic",
+          "description": "Kitabın anlatım üslubu ve tonu"
+        },
+        "pedagogical_model": {
+          "type": "string",
+          "enum": ["Bloom", "Constructivism", "Inquiry-Based"],
+          "default": "Bloom",
+          "description": "Eğitsel kurgu modeli (Bloom Taksonomisi önerilir)"
         }
       }
     },
