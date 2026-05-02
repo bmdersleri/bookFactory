@@ -2,6 +2,8 @@
 pytest>=8.0
 ruff>=0.5
 mypy>=1.10
+setuptools>=68
+wheel>=0.43
 build>=1.2
 twine>=5.0
 streamlit>=1.33

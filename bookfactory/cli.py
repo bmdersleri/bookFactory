@@ -59,9 +59,6 @@ import importlib.util
 import sys
 from pathlib import Path
 
-from bookfactory.commands.init import run as run_init
-
-
 def _dispatch_sync_github() -> None:
     """Called before argparse when sys.argv[1] == 'sync-github'."""
     _bf_root = Path(__file__).resolve().parent.parent
@@ -101,7 +98,13 @@ def _dispatch_qr_from_code() -> None:
     raise SystemExit(_mod.main(_argv))
 
 
-def main():
+def main(argv: list[str] | None = None):
+    command_args = sys.argv[1:] if argv is None else list(argv)
+    if command_args and command_args[0] != "init":
+        from bookfactory._cli import main as orchestrator_main
+
+        return orchestrator_main(command_args)
+
     if len(sys.argv) >= 2 and sys.argv[1] == "sync-github":
         _dispatch_sync_github()
     if len(sys.argv) >= 2 and sys.argv[1] == "qr-from-code":
@@ -190,17 +193,19 @@ def main():
                         help="Simülasyon — dosya oluşturma")
 
     # ── Yardım ────────────────────────────────────────────────────────────
-    if len(sys.argv) == 1:
+    if not command_args:
         parser.print_help()
         sys.exit(0)
 
-    args = parser.parse_args()
+    args = parser.parse_args(command_args)
 
     # ── Yönlendirme ───────────────────────────────────────────────────────
     if args.command == "version":
         print("Parametric Computer Book Factory v2.11.x")
 
     elif args.command == "init":
+        from bookfactory.commands.init import run as run_init
+
         run_init(
             output=args.output,
             non_interactive=args.non_interactive,

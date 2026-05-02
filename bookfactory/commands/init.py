@@ -237,7 +237,7 @@ def collect_answers(output_dir: Path) -> dict:
     answers["multilang"] = ask_yn("Çok dilli üretim (ör. tr + en) istiyor musunuz?", default=False)
     if answers["multilang"]:
         lang_str = ask("Çıktı dilleri (virgülle)", default=f"{answers['lang']}, en")
-        answers["output_languages"] = [l.strip() for l in lang_str.split(",")]
+        answers["output_languages"] = [lang.strip() for lang in lang_str.split(",")]
     else:
         answers["output_languages"] = [answers["lang"]]
 
@@ -287,6 +287,11 @@ def generate_manifest(a: dict) -> str:
         })
 
     data = {
+        "schema": {
+            "manifest_version": "1.0",
+            "bookfactory_min_version": "2.11.0",
+            "studio_min_version": "3.1.3",
+        },
         "book": {
             "title": a["title"],
             "subtitle": a.get("subtitle", ""),
@@ -315,6 +320,24 @@ def generate_manifest(a: dict) -> str:
             "code_validation": "required",
             "markdown_quality_check": "required",
             "post_production_build": "optional",
+        },
+        "quality_gates": {
+            "require_code_meta": True,
+            "require_code_tests_passed": True,
+            "require_screenshot_plan": True,
+            "require_references": True,
+            "require_outline_compliance": True,
+        },
+        "outputs": {
+            "docx": True,
+            "pdf": True,
+            "epub": True,
+            "html_site": True,
+        },
+        "ci": {
+            "enabled": True,
+            "fail_on_code_error": True,
+            "fail_on_missing_screenshot": False,
         },
         "code": {
             "extract": True,
@@ -557,6 +580,6 @@ def run(output: str = ".", non_interactive: bool = False,
     print(c("  Sonraki adımlar:", "bold"))
     print(f"    1. cd {root}")
     print(f"    2. git init && git add . && git commit -m 'init: {answers['title']}'")
-    print(f"    3. git remote add origin <repo-url> && git push -u origin main")
-    print(f"    4. manifests/book_manifest.yaml dosyasını gözden geçirin")
+    print("    3. git remote add origin <repo-url> && git push -u origin main")
+    print("    4. manifests/book_manifest.yaml dosyasını gözden geçirin")
     print()

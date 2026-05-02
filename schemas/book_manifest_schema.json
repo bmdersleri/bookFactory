@@ -9,6 +9,32 @@
 
   "properties": {
 
+    "schema": {
+      "description": "Manifest ve araç uyumluluk metaverisi",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manifest_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "default": "1.0",
+          "description": "Manifest şema sürümü"
+        },
+        "bookfactory_min_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "default": "2.11.0",
+          "description": "Bu manifest için gerekli en düşük BookFactory sürümü"
+        },
+        "studio_min_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "default": "3.1.3",
+          "description": "Bu manifest için gerekli en düşük Studio sürümü"
+        }
+      }
+    },
+
     "book": {
       "description": "Kitabın temel bibliyografik bilgileri",
       "type": "object",
@@ -168,6 +194,42 @@
         "code_validation":           { "$ref": "#/$defs/gate_value" },
         "markdown_quality_check":    { "$ref": "#/$defs/gate_value" },
         "post_production_build":     { "$ref": "#/$defs/gate_value" }
+      }
+    },
+
+    "quality_gates": {
+      "description": "GUI, CLI ve CI tarafından ortak okunacak kalite kapısı kuralları",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "require_code_meta":          { "type": "boolean", "default": true },
+        "require_code_tests_passed":  { "type": "boolean", "default": true },
+        "require_screenshot_plan":    { "type": "boolean", "default": true },
+        "require_references":         { "type": "boolean", "default": true },
+        "require_outline_compliance": { "type": "boolean", "default": true }
+      }
+    },
+
+    "outputs": {
+      "description": "Üretilecek çıktı aileleri için merkezi politika",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "docx":      { "type": "boolean", "default": true },
+        "pdf":       { "type": "boolean", "default": true },
+        "epub":      { "type": "boolean", "default": true },
+        "html_site": { "type": "boolean", "default": true }
+      }
+    },
+
+    "ci": {
+      "description": "CI davranışını manifestten yöneten ortak kurallar",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled":                    { "type": "boolean", "default": true },
+        "fail_on_code_error":         { "type": "boolean", "default": true },
+        "fail_on_missing_screenshot": { "type": "boolean", "default": false }
       }
     },
 

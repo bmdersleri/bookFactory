@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import re
 import shutil
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -42,6 +41,30 @@ SAFE_DIRS = [
 
 
 STUDIO_CONFIG_FILE = ".studio_config.json"
+MANIFEST_VERSION = "1.0"
+BOOKFACTORY_MIN_VERSION = "2.11.0"
+STUDIO_MIN_VERSION = "3.1.3"
+
+QUALITY_GATE_DEFAULTS = {
+    "require_code_meta": True,
+    "require_code_tests_passed": True,
+    "require_screenshot_plan": True,
+    "require_references": True,
+    "require_outline_compliance": True,
+}
+
+OUTPUT_DEFAULTS = {
+    "docx": True,
+    "pdf": True,
+    "epub": True,
+    "html_site": True,
+}
+
+CI_DEFAULTS = {
+    "enabled": True,
+    "fail_on_code_error": True,
+    "fail_on_missing_screenshot": False,
+}
 
 
 def utc_now() -> str:
@@ -263,6 +286,10 @@ def slugify_ascii(text: str) -> str:
 
 def normalize_manifest(raw: dict[str, Any]) -> dict[str, Any]:
     manifest = dict(raw)
+    manifest.setdefault("schema", {})
+    manifest["schema"].setdefault("manifest_version", MANIFEST_VERSION)
+    manifest["schema"].setdefault("bookfactory_min_version", BOOKFACTORY_MIN_VERSION)
+    manifest["schema"].setdefault("studio_min_version", STUDIO_MIN_VERSION)
     manifest.setdefault("book", {})
     manifest.setdefault("language", {})
     manifest.setdefault("structure", {})
@@ -271,6 +298,22 @@ def normalize_manifest(raw: dict[str, Any]) -> dict[str, Any]:
     manifest.setdefault("approval_gates", {})
     manifest.setdefault("code", {})
     manifest.setdefault("assets", {})
+    manifest.setdefault("quality_gates", {})
+    for key, value in QUALITY_GATE_DEFAULTS.items():
+        manifest["quality_gates"].setdefault(key, value)
+    manifest.setdefault("outputs", {})
+    for key, value in OUTPUT_DEFAULTS.items():
+        manifest["outputs"].setdefault(key, value)
+    old_output = manifest.get("output") or {}
+    old_formats = old_output.get("formats") if isinstance(old_output, dict) else None
+    if isinstance(old_formats, list):
+        manifest["outputs"]["docx"] = "docx" in old_formats
+        manifest["outputs"]["pdf"] = "pdf" in old_formats
+        manifest["outputs"]["epub"] = "epub" in old_formats
+        manifest["outputs"]["html_site"] = "html" in old_formats or "site" in old_formats
+    manifest.setdefault("ci", {})
+    for key, value in CI_DEFAULTS.items():
+        manifest["ci"].setdefault(key, value)
     manifest.setdefault("project", {})
     manifest["project"].setdefault("status", "in_progress")
     manifest["project"].setdefault("paths", {
@@ -285,6 +328,26 @@ def normalize_manifest(raw: dict[str, Any]) -> dict[str, Any]:
     return manifest
 
 
+def validate_bool_section(
+    section_name: str,
+    section: Any,
+    expected_keys: dict[str, bool],
+    errors: list[str],
+    warnings: list[str],
+) -> None:
+    if not isinstance(section, dict):
+        errors.append(f"{section_name} alanı object/dict olmalıdır.")
+        return
+    for key in expected_keys:
+        if key not in section:
+            warnings.append(f"{section_name}.{key} eksik; varsayılan değer kullanılacak.")
+        elif not isinstance(section[key], bool):
+            errors.append(f"{section_name}.{key} boolean olmalıdır.")
+    for key in section:
+        if key not in expected_keys:
+            warnings.append(f"{section_name}.{key} standart manifest alanı değil.")
+
+
 def validate_manifest(manifest: dict[str, Any], root: Path | None = None) -> dict[str, Any]:
     """Validate a book manifest for GUI editing and production safety.
 
@@ -297,6 +360,18 @@ def validate_manifest(manifest: dict[str, Any], root: Path | None = None) -> dic
 
     if not isinstance(manifest, dict):
         return {"valid": False, "errors": ["Manifest object/dict olmalıdır."], "warnings": []}
+
+    schema = manifest.get("schema") or {}
+    if not isinstance(schema, dict):
+        errors.append("schema alanı object/dict olmalıdır.")
+        schema = {}
+    for key in ("manifest_version", "bookfactory_min_version", "studio_min_version"):
+        value = schema.get(key)
+        if value is not None and not isinstance(value, str):
+            errors.append(f"schema.{key} string olmalıdır.")
+    manifest_version = str(schema.get("manifest_version") or "").strip()
+    if manifest_version and not re.match(r"^[0-9]+\.[0-9]+$", manifest_version):
+        warnings.append("schema.manifest_version major.minor biçiminde olmalıdır; örnek: 1.0")
 
     book = manifest.get("book") or {}
     if not isinstance(book, dict):
@@ -320,6 +395,35 @@ def validate_manifest(manifest: dict[str, Any], root: Path | None = None) -> dic
     out_langs = language.get("output_languages")
     if out_langs is not None and not isinstance(out_langs, list):
         warnings.append("language.output_languages liste olmalıdır; örnek: ['tr']")
+
+    validate_bool_section(
+        "quality_gates",
+        manifest.get("quality_gates") or {},
+        QUALITY_GATE_DEFAULTS,
+        errors,
+        warnings,
+    )
+    validate_bool_section(
+        "outputs",
+        manifest.get("outputs") or {},
+        OUTPUT_DEFAULTS,
+        errors,
+        warnings,
+    )
+    validate_bool_section(
+        "ci",
+        manifest.get("ci") or {},
+        CI_DEFAULTS,
+        errors,
+        warnings,
+    )
+    quality_gates = manifest.get("quality_gates") or {}
+    code = manifest.get("code") or {}
+    ci = manifest.get("ci") or {}
+    if quality_gates.get("require_code_tests_passed") and code.get("test") is False:
+        warnings.append("quality_gates.require_code_tests_passed true ancak code.test false.")
+    if ci.get("fail_on_code_error") and code.get("test") is False:
+        warnings.append("ci.fail_on_code_error true ancak code.test false.")
 
     project = manifest.get("project") or {}
     if project and not isinstance(project, dict):
@@ -603,6 +707,11 @@ Tam metin yazma. Yalnızca kitap yapısı, bölüm planı, kapsam ve üretim met
 ## 4. Beklenen YAML alanları
 
 ```yaml
+schema:
+  manifest_version: "1.0"
+  bookfactory_min_version: "2.11.0"
+  studio_min_version: "3.1.3"
+
 book:
   title:
   subtitle:
@@ -660,6 +769,24 @@ approval_gates:
   code_validation: required
   markdown_quality_check: required
   post_production_build: optional
+
+quality_gates:
+  require_code_meta: true
+  require_code_tests_passed: true
+  require_screenshot_plan: true
+  require_references: true
+  require_outline_compliance: true
+
+outputs:
+  docx: true
+  pdf: true
+  epub: true
+  html_site: true
+
+ci:
+  enabled: true
+  fail_on_code_error: true
+  fail_on_missing_screenshot: false
 
 code:
   extract: true
@@ -767,7 +894,7 @@ Bölüm aşağıdaki yapıyı izlemelidir:
 1. Bölümün amacı ve öğrenme çıktıları
 2. Temel kavramlar
 3. Kavramları açıklayan kısa örnekler
-4. KampüsHub uygulamasına bölüm katkısı
+4. {app.get('name', 'kümülatif uygulama')} uygulamasına bölüm katkısı
 5. Test edilebilir kod örnekleri
 6. Mermaid diyagramları gerektiğinde `mermaid` kod bloğu olarak
 7. Programatik ekran çıktısı planı gerektiğinde `[SCREENSHOT:{cid}_01_aciklayici_ad]` standardıyla
@@ -800,7 +927,7 @@ Ardından uygun dil etiketiyle kod bloğu verilmelidir.
 
 ## 7. Üslup
 
-- Dil: Türkçe
+- Dil: {language.get('primary_language', 'tr')}
 - Üslup: akıcı, öğretici, uygulamalı ve akademik doğruluğa sahip
 - Başlıklar manuel bölüm numarası içermemelidir; numaralandırma build aşamasında yapılacaktır.
 - Kapsam dışı teknolojiler ana öğretim içeriğine sokulmamalıdır.

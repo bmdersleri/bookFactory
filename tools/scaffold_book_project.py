@@ -29,7 +29,6 @@ Kullanım:
 """
 
 import argparse
-import os
 import sys
 import textwrap
 from datetime import datetime
@@ -75,14 +74,14 @@ def scaffold(args):
         print(f"HATA: '{output_root}' zaten mevcut. Farklı bir --name veya --output belirtin.")
         sys.exit(1)
 
-    print(f"\nBookFactory Kitap Projesi Başlatıcı")
+    print("\nBookFactory Kitap Projesi Başlatıcı")
     print(f"{'=' * 50}")
     print(f"Proje adı   : {args.name}")
     print(f"Kitap başlığı: {args.title}")
     print(f"Dil         : {args.lang}")
     print(f"Çıktı yolu  : {output_root}")
     if args.dry_run:
-        print(f"[DRY RUN — dosya oluşturulmayacak]\n")
+        print("[DRY RUN — dosya oluşturulmayacak]\n")
     print()
 
     # --- Dizinler ---
@@ -206,6 +205,11 @@ def scaffold(args):
         # BookFactory Kitap Manifesti
         # Tek doğruluk kaynağı — tüm üretim bu dosyadan yönetilir.
 
+        schema:
+          manifest_version: "1.0"
+          bookfactory_min_version: "2.11.0"
+          studio_min_version: "3.1.3"
+
         book:
           title: "{args.title}"
           subtitle: ""
@@ -232,6 +236,24 @@ def scaffold(args):
           code_validation: "required"
           markdown_quality_check: "required"
           post_production_build: "optional"
+
+        quality_gates:
+          require_code_meta: true
+          require_code_tests_passed: true
+          require_screenshot_plan: true
+          require_references: true
+          require_outline_compliance: true
+
+        outputs:
+          docx: true
+          pdf: true
+          epub: true
+          html_site: true
+
+        ci:
+          enabled: true
+          fail_on_code_error: true
+          fail_on_missing_screenshot: false
 
         code:
           extract: true
@@ -282,11 +304,11 @@ def scaffold(args):
     make_file(output_root / "assets" / "locked" / ".gitkeep", "", args.dry_run)
 
     print(f"\n✓ Proje başarıyla oluşturuldu: {output_root}")
-    print(f"\nSonraki adımlar:")
+    print("\nSonraki adımlar:")
     print(f"  1. cd {output_root}")
     print(f"  2. git init && git add . && git commit -m 'init: {args.title}'")
-    print(f"  3. manifests/book_manifest.yaml dosyasını doldurun")
-    print(f"  4. Mevcut bölüm dosyalarını chapters/ klasörüne taşıyın")
+    print("  3. manifests/book_manifest.yaml dosyasını doldurun")
+    print("  4. Mevcut bölüm dosyalarını chapters/ klasörüne taşıyın")
 
 
 if __name__ == "__main__":

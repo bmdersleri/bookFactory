@@ -34,7 +34,7 @@ class JavaAdapter(LanguageAdapter):
         stdin = item.get("stdin")
         args = normalize_args(item.get("args"))
         return run_command(
-            [self.java_path, main_class, *args],
+            [self.java_path, "-Dfile.encoding=UTF-8", main_class, *args],
             code_path.parent,
             timeout,
             stdin=str(stdin) if stdin is not None else None,
