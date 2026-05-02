@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem \"C:\\\\OneDrive\\\\OneDrive - mehmetakif.edu.tr\\\\react-web\\\\chapters\" -Filter \"*.md\")",
+      "Bash(Select-Object Name)",
+      "Bash(Sort-Object Name)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(Start-Process \"chrome.exe\" --ArgumentList \"http://127.0.0.1:8765\", \"--new-window\", \"--remote-debugging-port=9222\")",
+      "PowerShell(Start-Process \"chrome.exe\" -ArgumentList \"http://127.0.0.1:8765\", \"--new-window\", \"--remote-debugging-port=9222\")"
+    ]
+  }
+}

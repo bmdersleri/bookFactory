@@ -40,63 +40,63 @@ structure:
   - id: chapter_02
     title: React için Modern JavaScript Temelleri
     file: chapter_02_javascript_temelleri.md
-    status: in_progress
+    status: done
   - id: chapter_03
     title: HTML/CSS'ten Bileşen Düşüncesine
     file: chapter_03_html_css_bilesen_dusuncesi.md
-    status: planned
+    status: done
   - id: chapter_04
     title: JSX ve Render Mantığı
     file: chapter_04_jsx_render.md
-    status: planned
+    status: done
   - id: chapter_05
     title: Props ve Bileşen Kompozisyonu
     file: chapter_05_props_kompozisyon.md
-    status: planned
+    status: done
   - id: chapter_06
     title: State ve Event Yönetimi
     file: chapter_06_state_event.md
-    status: planned
+    status: done
   - id: chapter_07
     title: useEffect, Yan Etkiler ve API'ye Hazırlık
     file: chapter_07_useeffect_api.md
-    status: planned
+    status: done
   - id: chapter_08
     title: Hook Kuralları ve Memoization
     file: chapter_08_hook_memoization.md
-    status: planned
+    status: done
   - id: chapter_09
     title: Custom Hook Tasarımı
     file: chapter_09_custom_hooks.md
-    status: planned
+    status: done
   - id: chapter_10
     title: React Router v7
     file: chapter_10_router.md
-    status: planned
+    status: done
   - id: chapter_11
     title: Formlar, Validation ve Erişilebilirlik
     file: chapter_11_forms.md
-    status: planned
+    status: done
   - id: chapter_12
     title: Redux Toolkit
     file: chapter_12_redux.md
-    status: planned
+    status: done
   - id: chapter_13
     title: REST API, TanStack Query ve MSW
     file: chapter_13_api_tanstack.md
-    status: planned
+    status: done
   - id: chapter_14
     title: Zustand ve Alternatif State Yönetimi
     file: chapter_14_zustand.md
-    status: planned
+    status: done
   - id: chapter_15
     title: Performans, Test ve Dağıtım
     file: chapter_15_perf_test_deploy.md
-    status: planned
+    status: done
   - id: chapter_16
     title: KampüsHub Final Entegrasyonu
     file: chapter_16_final.md
-    status: planned
+    status: done
 approval_gates:
   manifest_validation: required
   chapter_input_generation: optional
@@ -116,4 +116,11 @@ assets:
   manual_override: true
 project:
   status: in_progress
-  updated_at: '2026-05-01T20:47:15+00:00'
+  updated_at: '2026-05-02T04:41:20+00:00'
+  paths:
+    chapters: chapters
+    chapter_prompts: prompts/chapter_inputs
+    chapter_backups: chapter_backups
+    build: build
+    assets: assets
+    exports: exports

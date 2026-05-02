@@ -363,20 +363,35 @@ def match_chapter_files(root: Path, manifest: dict[str, Any]) -> dict[str, Any]:
     For each chapter, the function first checks the current resolved file.  If it
     does not exist, it looks for markdown files that start with the chapter id,
     such as `chapter_02_*.md`, and updates `chapter.file` to that real filename.
+    Chapters whose file is found but whose status is still 'planned' or
+    'prompt_ready' are automatically promoted to 'draft'.
     """
     manifest = normalize_manifest(manifest)
-    chapters_dir = root / "chapters"
+    paths = (manifest.get("project") or {}).get("paths") or {}
+    chapters_rel = str(paths.get("chapters") or "chapters").strip()
+    chapters_dir = root / chapters_rel
     changes: list[dict[str, Any]] = []
     unmatched: list[dict[str, Any]] = []
     chapters_dir.mkdir(parents=True, exist_ok=True)
     all_md = sorted(chapters_dir.glob("*.md"))
+    auto_upgrade = {"planned", "prompt_ready"}
 
     for i, ch in enumerate(chapters_from_manifest(manifest), start=1):
         cid = chapter_id(ch, i)
         current = chapter_markdown_path(root, ch, i)
         old_file = chapter_file(ch, i)
+        old_status = str(ch.get("status") or "planned")
         if current.exists():
             ch["file"] = current.name
+            change: dict[str, Any] = {"id": cid}
+            if current.name != old_file:
+                change["old_file"] = old_file
+                change["new_file"] = current.name
+            if old_status in auto_upgrade:
+                ch["status"] = "draft"
+                change["status_updated"] = f"{old_status} → draft"
+            if len(change) > 1:
+                changes.append(change)
             continue
         candidates = sorted(chapters_dir.glob(f"{cid}_*.md"))
         if not candidates:
@@ -385,8 +400,15 @@ def match_chapter_files(root: Path, manifest: dict[str, Any]) -> dict[str, Any]:
         if candidates:
             new_file = candidates[0].name
             ch["file"] = new_file
+            change = {"id": cid}
             if old_file != new_file:
-                changes.append({"id": cid, "old_file": old_file, "new_file": new_file})
+                change["old_file"] = old_file
+                change["new_file"] = new_file
+            if old_status in auto_upgrade:
+                ch["status"] = "draft"
+                change["status_updated"] = f"{old_status} → draft"
+            if len(change) > 1:
+                changes.append(change)
         else:
             unmatched.append({"id": cid, "expected_file": old_file, "title": ch.get("title", "")})
 

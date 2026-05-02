@@ -385,8 +385,22 @@ async function matchChapterFiles() {
     manifestData = structuredClone(data.manifest || manifest);
     renderManifestForm();
     renderValidation(data.validation);
-    const changeText = `${data.changes?.length || 0} dosya eşleşmesi güncellendi, ${data.unmatched?.length || 0} bölüm eşleşmedi.`;
-    setStatus(changeText, data.unmatched?.length ? 'warn' : 'good');
+    const fileUpdates = (data.changes || []).filter(c => c.new_file).length;
+    const statUpdates = (data.changes || []).filter(c => c.status_updated).length;
+    try {
+      const saveData = await api('/api/manifest/save', {method: 'POST', body: JSON.stringify({root: root(), manifest: data.manifest, force: false})});
+      manifestData = structuredClone(saveData.manifest || data.manifest);
+      $('manifestYaml').value = saveData.yaml || $('manifestYaml').value;
+      project = await api('/api/project?root=' + encodeURIComponent(root()));
+      renderDashboard(); renderChapters(); renderManifestForm();
+      setStatus(
+        `${data.changes?.length || 0} güncelleme: ${fileUpdates} dosya adı, ${statUpdates} durum düzeltildi. Manifest kaydedildi.` +
+        (data.unmatched?.length ? ` ${data.unmatched.length} bölüm eşleşmedi.` : ''),
+        data.unmatched?.length ? 'warn' : 'good'
+      );
+    } catch (saveErr) {
+      setStatus(`Eşleştirme yapıldı (${data.changes?.length || 0} güncelleme) fakat kayıt başarısız: ${saveErr.message}`, 'warn');
+    }
   } catch (e) { setStatus('Dosya eşleştirme hatası: ' + e.message, 'bad'); }
 }
 
