@@ -73,7 +73,7 @@ def _qr_snippet(code_id: str, qr_policy: str, lookup: dict[str, dict[str, Path]]
     return '\n\n' + '&nbsp;&nbsp;'.join(parts) + '\n'
 
 
-def inject(text: str, lookup: dict[str, dict[str, Path]], width: str) -> tuple[str, int]:
+def inject(text: str, lookup: dict[str, dict[str, Path]], width: str, min_lines: int = 15) -> tuple[str, int]:
     """Scan merged markdown and inject QR images after each code fence."""
     out: list[str] = []
     pos = 0
@@ -82,7 +82,7 @@ def inject(text: str, lookup: dict[str, dict[str, Path]], width: str) -> tuple[s
     for meta_m in _META_RE.finditer(text):
         meta_body = meta_m.group(2)
         code_id = _extract_field(meta_body, 'id')
-        qr_policy = _extract_field(meta_body, 'qr') or 'dual'
+        qr_policy = (_extract_field(meta_body, 'qr') or 'dual').lower()
 
         # Copy everything up to end of CODE_META comment
         out.append(text[pos:meta_m.end()])
@@ -91,7 +91,7 @@ def inject(text: str, lookup: dict[str, dict[str, Path]], width: str) -> tuple[s
         if not code_id or qr_policy in ('none', 'false', 'no', 'skip'):
             continue
 
-        # Make sure no other CODE_META comes before the next fence
+        # Find the following fence
         next_meta = _META_RE.search(text, pos)
         fence_m = _FENCE_RE.search(text, pos)
         if fence_m is None:
@@ -99,14 +99,26 @@ def inject(text: str, lookup: dict[str, dict[str, Path]], width: str) -> tuple[s
         if next_meta and next_meta.start() < fence_m.start():
             continue  # another meta block precedes the fence — skip
 
+        # Extract code and count lines
+        code_content = fence_m.group(2)
+        line_count = len(code_content.splitlines())
+
+        # Logic: Inject if 'force' OR (not 'none' AND lines >= threshold)
+        should_inject = False
+        if qr_policy == 'force':
+            should_inject = True
+        elif qr_policy != 'none' and line_count >= min_lines:
+            should_inject = True
+
         # Copy up to and including the closing ```
         out.append(text[pos:fence_m.end()])
         pos = fence_m.end()
 
-        snippet = _qr_snippet(code_id, qr_policy, lookup, width)
-        if snippet:
-            out.append(snippet)
-            injected += 1
+        if should_inject:
+            snippet = _qr_snippet(code_id, qr_policy, lookup, width)
+            if snippet:
+                out.append(snippet)
+                injected += 1
 
     out.append(text[pos:])
     return ''.join(out), injected
@@ -122,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument('--output', type=Path, default=None,
                     help='Output Markdown path (default: overwrite --merged-md)')
     ap.add_argument('--width', default='0.8in', help='QR image width in DOCX (default: 0.8in)')
+    ap.add_argument('--min-lines', type=int, default=15, help='Minimum code lines to trigger QR (default: 15)')
     args = ap.parse_args(argv)
 
     base_dir = args.base_dir.resolve()
@@ -150,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     text = merged_path.read_text(encoding='utf-8')
-    new_text, count = inject(text, lookup, args.width)
+    new_text, count = inject(text, lookup, args.width, min_lines=args.min_lines)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(new_text, encoding='utf-8')

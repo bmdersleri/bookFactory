@@ -2,7 +2,16 @@
 
 All notable changes to BookFactory are documented in this file.
 
-## [3.5.0] - 2026-05-02
+## [3.8.0] - 2026-05-02
+
+### Added
+- **Smart QR Layout Policy:** Automatically skips QR codes for short snippets (< 15 lines) to improve readability. Supported 'force' and 'auto' policies.
+- **QR Threshold Setting:** Global configuration in manifest for minimum line count.
+- **Enhanced Pipeline:** Fixed and optimized `post_production_pipeline.py` with full stage integration.
+
+### Changed
+- Refactored `inject_qr_references.py` to perform intelligent line-count analysis.
+- Optimized Studio GUI with 'Smart Layout' branding and improved notification logic.
 
 ### Added
 - **Semantic Consistency Checker:** RAG-supported audit prompts to detect technical and terminological contradictions.

@@ -4,7 +4,7 @@
 Post-production orchestrator for Parametric Computer Book Factory.
 
 Pipeline stages:
-  validate -> merge -> prepare-mermaid -> render-mermaid -> generate-qr -> resolve-assets -> pandoc -> fix-docx -> optimize-tables -> generate-syllabus -> generate-indexing
+  validate -> merge -> prepare-mermaid -> render-mermaid -> generate-qr -> resolve-assets -> inject-qr -> pandoc -> fix-docx -> optimize-tables -> generate-syllabus -> generate-indexing -> generate-web-site
 """
 from __future__ import annotations
 
@@ -93,7 +93,6 @@ def main(argv=None) -> int:
         print(f"\n=== {stage} ===", flush=True)
 
         if stage == "validate":
-            # Basic validation logic
             report_lines.append("- validate: PASS")
 
         elif stage == "merge":
@@ -129,6 +128,20 @@ def main(argv=None) -> int:
             if run(cmd, cwd=base, dry_run=args.dry_run) != 0: return 1
             report_lines.append("- resolve-assets: PASS")
 
+        elif stage == "inject-qr":
+            if not qr_cfg.get("enabled", False): continue
+            qr_manifest = resolve(base, qr_cfg.get("manifest"))
+            if not qr_manifest or not qr_manifest.exists(): continue
+            cmd = [
+                sys.executable, str(tools / "inject_qr_references.py"),
+                "--merged-md", str(merged_md),
+                "--qr-manifest", str(qr_manifest),
+                "--base-dir", str(base),
+                "--min-lines", str(qr_cfg.get("min_lines", 15))
+            ]
+            if run(cmd, cwd=base, dry_run=args.dry_run) != 0: return 1
+            report_lines.append("- inject-qr: PASS")
+
         elif stage == "pandoc":
             output_docx.parent.mkdir(parents=True, exist_ok=True)
             cmd = ["pandoc", "-f", pandoc_cfg.get("from", "markdown+tex_math_single_backslash"), str(merged_md), "-o", str(output_docx)]
@@ -154,16 +167,12 @@ def main(argv=None) -> int:
             if run(cmd, cwd=base, dry_run=args.dry_run) != 0: return 1
             report_lines.append(f"- generate-indexing: `{output_dir}`")
 
-    report_path = resolve(base, build.get("report") or "build/reports/post_production_report.md")
-    if report_path and not args.dry_run:
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text("\n".join(report_lines) + "\n", encoding="utf-8")
-    
-    return 0
-
-if __name__ == "__main__":
-    sys.exit(main())
-f run(cmd, cwd=base, dry_run=args.dry_run) != 0: return 1
+        elif stage == "generate-web-site":
+            manifest_path = find_project_manifest(base)
+            if not manifest_path: continue
+            output_dir = resolve(base, "dist/web_site")
+            cmd = [sys.executable, str(root / "tools" / "export" / "generate_web_site.py"), "--manifest", str(manifest_path), "--output-dir", str(output_dir)]
+            if run(cmd, cwd=base, dry_run=args.dry_run) != 0: return 1
             report_lines.append(f"- generate-web-site: `{output_dir}`")
 
     report_path = resolve(base, build.get("report") or "build/reports/post_production_report.md")

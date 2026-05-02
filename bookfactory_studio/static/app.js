@@ -1,6 +1,6 @@
 /**
- * BookFactory Studio Frontend Orchestrator v3.7
- * User Experience & Authoring Excellence
+ * BookFactory Studio Frontend Orchestrator v3.8
+ * User Experience & Smart Layout Edition
  */
 
 let project = null;
@@ -92,6 +92,7 @@ async function loadProject() {
     manifestData = structuredClone(project.manifest || {});
     renderDashboard();
     renderControlPanel();
+    renderChapters();
     renderManifestForm();
     await loadPipelineSteps();
     await refreshManifest(false);
@@ -232,6 +233,11 @@ function renderManifestForm() {
   $('mCourseName').value = get(m, 'academic.course_name');
   $('mStyleProfile').value = get(m, 'language.style_profile', 'Academic');
   $('mPedagogicalModel').value = get(m, 'language.pedagogical_model', 'Bloom');
+  
+  $('mCodeExtract').checked = Boolean(get(m, 'code.extract', true));
+  $('mCodeTest').checked = Boolean(get(m, 'code.test', true));
+  $('mQrThreshold').value = get(m, 'code.qr_threshold_lines', 15);
+  
   renderGlossaryRows(); renderManifestChapterRows();
 }
 
@@ -260,13 +266,23 @@ async function saveManifestForm() {
   m.book.title = $('mBookTitle').value; m.book.author = $('mBookAuthor').value;
   m.academic = m.academic || {}; m.academic.course_code = $('mCourseCode').value; m.academic.course_name = $('mCourseName').value;
   m.language.style_profile = $('mStyleProfile').value; m.language.pedagogical_model = $('mPedagogicalModel').value;
-  await api('/api/manifest/save', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, manifest: m }) });
-  setStatus('Kaydedildi.', 'good'); await loadProject();
+  
+  m.code = m.code || {};
+  m.code.extract = $('mCodeExtract').checked;
+  m.code.test = $('mCodeTest').checked;
+  m.code.qr_threshold_lines = parseInt($('mQrThreshold').value || 15);
+
+  try {
+    await api('/api/manifest/save', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, manifest: m }) });
+    setStatus('Kaydedildi.', 'good'); await loadProject();
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
 }
 
 async function refreshMedia() {
-  const data = await api('/api/assets?root=' + encodeURIComponent($('projectRoot').value));
-  $('mediaGrid').innerHTML = data.assets.map(a => `<div class="media-item"><div class="media-thumb"><img src="/api/project/file?path=${encodeURIComponent(a.rel_path)}&root=${encodeURIComponent($('projectRoot').value)}"></div><div class="media-info"><div class="media-name">${escapeHtml(a.name)}</div><button class="smallbtn" onclick="copyMarkdownLink('${a.rel_path}', '${a.name}')">Link</button></div></div>`).join('');
+  try {
+    const data = await api('/api/assets?root=' + encodeURIComponent($('projectRoot').value));
+    $('mediaGrid').innerHTML = data.assets.map(a => `<div class="media-item"><div class="media-thumb"><img src="/api/project/file?path=${encodeURIComponent(a.rel_path)}&root=${encodeURIComponent($('projectRoot').value)}"></div><div class="media-info"><div class="media-name">${escapeHtml(a.name)}</div><button class="smallbtn" onclick="copyMarkdownLink('${a.rel_path}', '${a.name}')">Link</button></div></div>`).join('');
+  } catch (e) { setStatus('Hata: ' + e.message, 'bad'); }
 }
 
 async function copyMarkdownLink(path, name) {
@@ -283,8 +299,8 @@ $('addGlossaryTerm').addEventListener('click', addGlossaryRow);
 $('saveManifestForm').addEventListener('click', saveManifestForm);
 $('closeDebug').addEventListener('click', () => $('debugModal').classList.add('hidden'));
 $('saveAndTestCode').addEventListener('click', saveAndTestCode);
-$('runStep').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: $('pipelineStep').value, options: JSON.parse($('jobOptions').value || '{}') }) }).then(j => pollJob(j.id)); });
-$('runWebSite').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({root: $('projectRoot').value, step: 'generate-web-site', options: {}}) }).then(j => pollJob(j.id)); });
+$('runStep').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({ root: $('projectRoot').value, step: $('pipelineStep').value, options: JSON.parse($('jobOptions').value || '{}') }) }).then(j => pollJob(job.id)); });
+$('runWebSite').addEventListener('click', () => { api('/api/jobs', { method: 'POST', body: JSON.stringify({root: $('projectRoot').value, step: 'generate-web-site', options: {}}) }).then(j => pollJob(job.id)); });
 window.addEventListener('keydown', (e) => { if (e.altKey && e.key >= '1' && e.key <= '8') showTab(['dashboard', 'control', 'wizard', 'manifest', 'chapters', 'production', 'reports', 'media'][parseInt(e.key)-1]); });
 async function loadPipelineSteps() { const data = await api('/api/pipeline/steps'); $('pipelineStep').innerHTML = data.steps.map(s => `<option value="${s.id}">${s.title}</option>`).join(''); }
 
